@@ -1,34 +1,55 @@
 # AXIC Logistics
 
-An original logistics portfolio project: an editorial customer website connected to an operations workspace. Ink blue, soft neutrals and lime accents; custom animated SVG freight network; responsive layouts; keyboard-accessible controls; reduced-motion support.
+An original logistics portfolio project built with **Next.js**, **Vercel**, and **Supabase**. The customer site connects freight quotes, booking and tracking to a demo operations workspace.
 
-## Customer website
+## Features
 
-- Road, air and ocean service information.
-- Coverage across Nigeria's 36 states and FCT, five West African destinations, UK, US and Canada.
-- Instant illustrative NGN estimates based on actual or volumetric weight, service, route, handling and protection.
-- Demo booking with a unique tracking ID stored in D1.
-- Shipment tracking refreshed every 10 seconds from the same records operations uses.
-- Support tickets stored in the operations inbox.
+- Responsive ink-blue and lime design, animated SVG freight network and reduced-motion support.
+- Road, air and ocean services; Nigerian, West African and international concept coverage.
+- Illustrative NGN quotes with volumetric weight, protection and handling.
+- Stored shipment bookings, shared milestones and tracking refresh every 10 seconds.
+- Dispatch board, driver assignment, exception management and CSV exports.
+- Support ticket creation and resolution.
 
-## Operations workspace (`/operations`)
+Try tracking **AX-204810**. Book a fictional shipment, update it in `/operations`, then watch customer tracking refresh.
 
-- Overview metrics and shipment status distribution.
-- Searchable shipment table with status filters and CSV export.
-- Dispatch board with driver assignment, location updates and exception handling.
-- Timestamped milestones visible to customers.
-- Support ticket resolution and reopening.
+## Vercel deployment
 
-Try tracking **AX-204810**. Create a quote and book a fictional shipment. Open the operations workspace, update its driver/status/location, then watch customer tracking refresh.
+1. Create a dedicated Supabase project. Choose a region close to your Vercel functions.
+2. Run `supabase/schema.sql` in that project's SQL Editor. It creates the shipment and ticket tables, enables RLS and revokes direct anonymous/authenticated access. It is a one-time bootstrap script, not a repeatable migration.
+3. Get the project URL from Supabase's Connect dialog, and a secret key (`sb_secret_…`) from Settings → API Keys. Keep the key out of GitHub, screenshots and chat messages.
+4. Import `PapyT/axic-logistics` in Vercel. Select **Next.js**; use the repository root. Node 22 or 24. Install with `pnpm install --frozen-lockfile` and build with `pnpm build`. Leave the output directory default.
+5. In Vercel → Project → Settings → Environment Variables, add the variables below. Mark `SUPABASE_SECRET_KEY` as **Secret** (the API may call it Sensitive). Add production and preview values before deploying. Use a separate database for isolated previews where practical.
+6. Deploy or redeploy after setting the variables. Verify a quote, a booking, its tracking ID, a dispatch update and a support ticket.
 
-## Setup and validation
+| Variable | Value source | Where it is used |
+| --- | --- | --- |
+| `SUPABASE_URL` | Your Supabase project URL, `https://<ref>.supabase.co` | Server API only |
+| `SUPABASE_SECRET_KEY` | Supabase Settings → API Keys → secret key | Server API only; keep private |
 
-Node 22.13+ and pnpm. Run `pnpm install`, `pnpm typecheck`, `pnpm test` and `pnpm build`. `pnpm dev` uses the Cloudflare/Vinext development environment. Apply the Drizzle migrations to local D1 before testing API calls locally. The Sites build provisions and migrates the hosted D1 binding declared as `DB` in `.openai/hosting.json`.
+No `NEXT_PUBLIC_` environment variables are required. The browser calls `/api/shipments` and `/api/support`; only the server calls Supabase. A legacy service-role JWT can be used in `SUPABASE_SECRET_KEY` for compatibility, but prefer a current secret key. No `DATABASE_URL`, OpenAI key, Vercel token or GPS/map key is needed for this version.
 
-`tests/verify.mjs` tests quote rules and the actual API handlers using real in-memory SQLite behind a D1-compatible adapter. It covers booking persistence, dispatch/tracking synchronization, fixture updates, support resolution and rejected invalid requests. It does not validate a remote D1 deployment or replace browser QA.
+The code does **not** depend on OpenAI hosting, Cloudflare bindings, Vinext, or ChatGPT authentication. Existing records in the previous hosted demo are not migrated automatically.
 
-## Demo boundaries
+## Local development
 
-AXIC Logistics is a fictional portfolio concept. Rates, coverage, customers, drivers and initial shipment milestones are illustrative. Tracking reflects stored dispatch milestones; no carrier API, GPS, payment gateway, physical shipping or external messaging integration is connected. The operations workspace is deliberately accessible as a demo under the Site's audience controls. A production deployment needs staff authentication/authorization, customer ownership controls, carrier integration, rates, operational policies and abuse controls before collecting real customer data. Use fictional details only.
+Node 22.13+ (Node 24 is recommended for the test runner), pnpm 11.25.0.
 
-No API secrets are required. No third-party tracking or analytics scripts. Fonts use Google Fonts with system fallbacks.
+```sh
+corepack enable
+pnpm install --frozen-lockfile
+cp .env.example .env.local
+# Add real local-development values privately to .env.local.
+pnpm dev
+```
+
+Run `pnpm typecheck`, `pnpm test`, and `pnpm build`. Tests exercise the actual API handlers and REST adapter using a mock Supabase Data API, including optimistic concurrency and secret/error handling. A real Supabase project and browser QA are required for deployment verification.
+
+## Privacy and demo boundaries
+
+- `.env`, `.env.local`, all environment variants, `.vercel` and build output are ignored. Only `.env.example` with placeholders belongs in Git.
+- The Supabase secret stays server-side and is never returned in API responses. Database errors are sanitized before being returned to clients.
+- RLS and grants block browsers from calling the tables directly. The server secret can access them.
+- Keeping secrets private does not make the website, its demo API or operations dashboard private. The project intentionally remains a public portfolio demonstration.
+- All sample companies, rates and shipment events are illustrative. No carrier API, live GPS, physical shipment, payments or external messaging is connected. Use fictional data only.
+- Before collecting real customer data, add operator authentication/authorization, customer ownership controls, abuse protection and carrier integration. GPS integration will need additional configuration when implemented.
