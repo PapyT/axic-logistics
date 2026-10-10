@@ -16,7 +16,7 @@ export function quoteForChat(input:QuoteInput){
  catch(e){return {error:e instanceof Error?e.message:'Invalid quote.'};}
 }
 export function createChatAgent(){return new ToolLoopAgent({
- model:process.env.AI_GATEWAY_MODEL||'anthropic/claude-haiku-5.5',
+ model:process.env.AI_GATEWAY_MODEL||'google/gemini-2.5-flash-lite',
  maxOutputTokens:700,maxRetries:0,stopWhen:isStepCount(3),
  instructions:`You are AXIC Logistics' customer assistant. Be warm, concise and professional. Use plain text, no markdown tables. Help only with freight, coverage, estimates, tracking and booking/support guidance.
 Ground truth: Nigeria coverage is 36 states plus Abuja: ${states.join(', ')}. Listed international destinations: ${international.join(', ')}; availability is subject to confirmation. Services: Road freight, Air express, Ocean freight. Intercontinental road freight is unavailable.

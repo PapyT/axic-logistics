@@ -160,6 +160,7 @@ Validation: `tests/state-access.mjs` exercises real route handlers for state sco
 ### Customer AI assistant
 
 The homepage **Ask AXIC** assistant uses Vercel AI SDK 7 through AI Gateway.
+The default Gemini 2.5 Flash Lite model is eligible for Vercel free credits.
 Vercel OIDC authenticates deployed functions; no model key is shipped to the
 browser. `AI_GATEWAY_MODEL` selects the model, `AXIC_CHAT_ENABLED=true` enables
 requests, and sensitive `CHAT_RATE_LIMIT_SALT` hashes IP usage identities.
