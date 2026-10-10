@@ -18,14 +18,14 @@ const tracked=await trackForChat('ax-a0000001');assert.equal(tracked.destination
 assert((await trackForChat('AX-204810')).error);assert((await trackForChat('invalid')).error);globalThis.chatShipment=undefined;assert((await trackForChat('AX-A0000001')).error);
 assert.deepEqual(Object.keys(createChatAgent().tools),['freightQuote','trackShipment']);
 writeFileSync('work/chat-ai.mjs','export async function createAgentUIStreamResponse(options){globalThis.chatStream=options;return Response.json({stream:true})}');
-writeFileSync('work/chat-database.mjs','export async function supabaseRequest(...args){globalThis.chatRateArgs=args;return globalThis.chatAllowed}');
-writeFileSync('work/chat-route.mjs',compile(readFileSync('app/api/chat/route.ts','utf8').replace("'ai'","'./chat-ai.mjs'").replace("'@/lib/chat-agent'","'./chat-agent.mjs'").replace("'@/lib/chat-policy'","'./chat-policy.mjs'").replace("'@/lib/supabase-server'","'./chat-database.mjs'")));
+writeFileSync('work/chat-database.mjs','export async function consumeChat(identity){globalThis.chatRateArgs=identity;return globalThis.chatAllowed}');
+writeFileSync('work/chat-route.mjs',compile(readFileSync('app/api/chat/route.ts','utf8').replace("'ai'","'./chat-ai.mjs'").replace("'@/lib/chat-agent'","'./chat-agent.mjs'").replace("'@/lib/chat-policy'","'./chat-policy.mjs'").replace("'@/lib/chat-rate-server'","'./chat-database.mjs'")));
 const {POST}=await import('../work/chat-route.mjs');const req=(body={messages:[user('hello')]},origin='https://axic.test')=>new Request('https://axic.test/api/chat',{method:'POST',headers:{origin,'content-type':'application/json'},body:JSON.stringify(body)});
 const keys=['AXIC_CHAT_ENABLED','CHAT_RATE_LIMIT_SALT','VERCEL_OIDC_TOKEN','AI_GATEWAY_API_KEY','VERCEL'];const before=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
 try{
  process.env.AXIC_CHAT_ENABLED='false';assert.equal((await POST(req())).status,503);assert.equal((await POST(req(undefined,'https://evil.test'))).status,403);
  process.env.AXIC_CHAT_ENABLED='true';process.env.CHAT_RATE_LIMIT_SALT='TEST_ONLY';process.env.VERCEL_OIDC_TOKEN='TEST_ONLY';delete process.env.VERCEL;
- assert.equal((await POST(req({messages:[user('x'.repeat(2001))]}))).status,400);globalThis.chatAllowed=false;assert.equal((await POST(req())).status,429);globalThis.chatAllowed=true;assert.equal((await POST(req())).status,200);
- assert.match(globalThis.chatRateArgs[3].p_identity,/^[a-f0-9]{64}$/);assert.equal(globalThis.chatStream.sendReasoning,false);assert.equal(globalThis.chatStream.timeout,50000);
+ assert.equal((await POST(req({messages:[user('x'.repeat(2001))]}))).status,400);globalThis.chatAllowed=false;assert.equal((await POST(req())).status,429);globalThis.chatAllowed=true;delete process.env.VERCEL_OIDC_TOKEN;process.env.VERCEL='1';assert.equal((await POST(req())).status,200);
+ assert.match(globalThis.chatRateArgs,/^[a-f0-9]{64}$/);assert.equal(globalThis.chatStream.sendReasoning,false);assert.equal(globalThis.chatStream.timeout,50000);
 }finally{for(const k of keys){if(before[k]===undefined)delete process.env[k];else process.env[k]=before[k];}}
 console.log('PASS: chat rejects forged roles/tool results and oversized input, uses real quote rules, redacts shipment contacts, enforces origin/usage limits and keeps mutations unavailable.');

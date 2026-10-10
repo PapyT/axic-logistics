@@ -2,7 +2,7 @@ import {createHash} from 'node:crypto';
 import {createAgentUIStreamResponse} from 'ai';
 import {createChatAgent} from '@/lib/chat-agent';
 import {chatMessages} from '@/lib/chat-policy';
-import {supabaseRequest} from '@/lib/supabase-server';
+import {consumeChat} from '@/lib/chat-rate-server';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 export const maxDuration=60;
@@ -19,7 +19,7 @@ export async function POST(req:Request){
   // Outside Vercel use a single shared development bucket, not spoofable headers.
   const ip=process.env.VERCEL?req.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim()||'unknown':'development';
   const identity=createHash('sha256').update(process.env.CHAT_RATE_LIMIT_SALT+'|'+ip).digest('hex');
-  const allowed=await supabaseRequest<boolean>('rpc/axic_consume_chat',{},'POST',{p_identity:identity});
+  const allowed=await consumeChat(identity);
   if(!allowed)return Response.json({error:'The assistant has reached its usage limit. Please use the calculator, tracking or support form.'},{status:429,headers:{'Retry-After':'60'}});
   return await createAgentUIStreamResponse({agent:createChatAgent(),uiMessages:messages,abortSignal:req.signal,timeout:50000,sendReasoning:false,onError:error=>{console.error('AXIC assistant generation failed',{name:error instanceof Error?error.name:'Unknown',statusCode:error&&typeof error==='object'&&'statusCode' in error?error.statusCode:undefined});return 'The assistant could not finish this response. Please try again or use the forms below.';},headers:{'Cache-Control':'no-store'}});
  }catch{return unavailable();}
