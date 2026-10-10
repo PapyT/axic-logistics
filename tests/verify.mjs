@@ -21,16 +21,17 @@ globalThis.fetch=async(url,options)=>{
  if(options.method==='PATCH'){const b=JSON.parse(options.body);rows=rows.map(row=>{const r={...row,...b};map.set(r.id,structuredClone(r));return r})}
  return Response.json(rows);
 };
-const data={origin:'Lagos',destination:'Federal Capital Territory',service:'Road freight',weight:25,length:40,width:30,height:30,insurance:true,customer:'Test Studio'};
-assert.equal(quote(data).total,16894);assert.equal(states.length,37);assert.equal(new Set(locations).size,locations.length);assert.equal(quote(data).billable,25);assert.equal(quote({...data,weight:1}).billable,7.2);
+const data={origin:'Lagos',destination:'Abuja',service:'Road freight',weight:25,length:40,width:30,height:30,insurance:true,customer:'Test Studio'};
+assert.equal(quote(data).total,16894);assert.equal(quote({...data,destination:'Federal Capital Territory'}).total,16894);assert.throws(()=>quote({...data,origin:'Abuja',destination:'Federal Capital Territory'}));assert.equal(states.length,37);assert.equal(new Set(locations).size,locations.length);assert.equal(quote(data).billable,25);assert.equal(quote({...data,weight:1}).billable,7.2);
 assert.throws(()=>quote({...data,destination:'Lagos'}));assert.throws(()=>quote({...data,destination:'Canada'}));assert.throws(()=>quote({...data,weight:NaN}));assert.throws(()=>quote({...data,insurance:'yes'}));
-let r=await api.GET(request('GET'));assert.equal(r.status,200);assert.equal((await r.json()).length,6);
+let r=await api.GET(request('GET'));assert.equal(r.status,200);assert.equal((await r.json()).length,0);
 r=await api.POST(request('POST',data));assert.equal(r.status,201);const booking=await r.json();assert.equal(booking.amount,quote(data).total);
 r=await api.GET(request('GET',null,'https://test.local/api/shipments?id='+booking.id));assert.equal((await r.json()).customer,undefined);
 r=await api.PATCH(request('PATCH',{id:booking.id,status:'In transit',location:'Lokoja',driver:'Demo Driver'}));assert.equal(r.status,200);assert.equal((await r.json()).events.length,2);
 r=await api.GET(request('GET',null,'https://test.local/api/shipments?id='+booking.id));assert.equal((await r.json()).status,'In transit');
-r=await api.PATCH(request('PATCH',{id:'AX-204810',status:'Delivered',location:'Abuja',driver:'Test Driver'}));assert.equal(r.status,200);
-r=await api.GET(request('GET',null,'https://test.local/api/shipments?id=AX-204810'));assert.equal((await r.json()).status,'Delivered');
+r=await api.PATCH(request('PATCH',{id:booking.id,status:'In transit',location:'Lokoja',driver:'Demo Driver'}));assert.equal((await r.json()).events.length,2);
+r=await api.PATCH(request('PATCH',{id:'AX-204810',status:'Delivered',location:'Abuja',driver:'Test Driver'}));assert.equal(r.status,404);
+r=await api.GET(request('GET',null,'https://test.local/api/shipments?id=AX-204810'));assert.equal(r.status,404);
 r=await api.GET(request('GET',null,'https://test.local/api/shipments?id=UNKNOWN'));assert.equal(r.status,404);
 r=await api.POST(request('POST',{...data,weight:0}));assert.equal(r.status,400);
 r=await api.PATCH(request('PATCH',{id:booking.id,status:'Fake',location:'Here',driver:'Someone'}));assert.equal(r.status,400);

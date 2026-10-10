@@ -1,86 +1,65 @@
 # AXIC Logistics
 
-An original logistics portfolio project built with **Next.js**, **Vercel**, **Prisma**, and **Supabase Postgres**. The customer site connects freight quotes, booking and tracking to a staff-only operations workspace.
+Next.js customer website and staff operations workspace, hosted on Vercel with Supabase Postgres and Prisma. Bookings, driver assignments, status events and support tickets use stored data. There are no seeded shipments or fake dashboard counts. Empty databases show empty states. Old built-in sample IDs are retired from listing, tracking and updates; user-created records are retained.
 
 ## Features
 
-- Responsive ink-blue and lime design, cargo-port photography in the hero, SVG coverage graphics and reduced-motion support.
-- Road, air and ocean services; Nigerian, West African and international concept coverage.
-- Illustrative NGN quotes with volumetric weight, protection and handling.
-- Stored shipment bookings, shared milestones and tracking refresh every 10 seconds.
-- Dispatch board, driver assignment, exception management and CSV exports.
-- Support ticket creation and resolution.
+- Responsive ink/teal website with locally hosted freight photography.
+- Abuja destination label with compatibility for older FCT booking records.
+- Estimated NGN quote calculator and saved bookings with unique tracking IDs.
+- Staff login, dispatch management, CSV export and support ticket resolution.
+- Customer tracking polls saved dispatch milestones every 10 seconds.
+- Unchanged saves add no events; driver/location edits are labelled separately.
 
-Try tracking **AX-204810**. Book a fictional shipment, update it in `/operations`, then watch customer tracking refresh.
+The public site no longer displays mock metrics, sample companies or sample tracking IDs. The operations overview uses a static warehouse image instead of an animated network. Geographic coverage and service availability must be confirmed by the operator. Estimated prices are retained by request; they are not live carrier tariffs. No GPS, carrier, payment or external messaging integration is connected.
 
-## Vercel deployment
+## Database / Vercel setup
 
-1. Create a dedicated Supabase project. Choose a region close to your Vercel functions.
-2. Run `supabase/schema.sql` in that project's SQL Editor. It creates the shipment and ticket tables, enables RLS and revokes direct anonymous/authenticated access. It is a one-time bootstrap script, not a repeatable migration.
-3. Get the project URL from Supabase's Connect dialog, and a secret key (`sb_secret_…`) from Settings → API Keys. Keep the key out of GitHub, screenshots and chat messages.
-4. Import `PapyT/axic-logistics` in Vercel. Select **Next.js**; use the repository root. Node 22 or 24. Install with `pnpm install --frozen-lockfile` and build with `pnpm build`. Leave the output directory default.
-5. In Vercel → Project → Settings → Environment Variables, add the variables below. Mark `SUPABASE_SECRET_KEY` as **Secret** (the API may call it Sensitive). Add production and preview values before deploying. Use a separate database for isolated previews where practical.
-6. Deploy or redeploy after setting the variables. Verify a quote, a booking, its tracking ID, a dispatch update and a support ticket.
+The existing project is **Kodryn Technologies → Portfolio Design**. AXIC tables already exist: do not rerun `supabase/schema.sql`. That script is only for a fresh database. Prisma maps `Shipment` to `axic_shipments` and `SupportTicket` to `axic_tickets`, preserving JSONB data, version checks, CHECK constraints, RLS and grants. No migration is required for this revision.
 
-| Variable | Value source | Where it is used |
-| --- | --- | --- |
-| `SUPABASE_URL` | Your Supabase project URL, `https://<ref>.supabase.co` | Server API only |
-| `SUPABASE_SECRET_KEY` | Supabase Settings → API Keys → secret key | Server API only; keep private |
+Import `PapyT/axic-logistics` in Vercel as Next.js using Node 22/24, install `pnpm install --frozen-lockfile`, build `pnpm build`. Set private variables in the dashboard, then redeploy. Do not commit credentials or use `NEXT_PUBLIC_` for them.
 
-No `NEXT_PUBLIC_` environment variables are required. The browser calls `/api/shipments` and `/api/support`; only the server calls Supabase. A legacy service-role JWT can be used in `SUPABASE_SECRET_KEY` for compatibility, but prefer a current secret key. No OpenAI key, Vercel token or GPS/map key is needed. See the Prisma setup below for the database connection.
+| Variable | Purpose / source |
+| --- | --- |
+| `DATABASE_URL` | Prisma runtime: Supabase Connect → Transaction pooler (port 6543), password inserted privately |
+| `DIRECT_URL` | Local Prisma CLI/Studio: Session pooler (5432) or direct IPv6 connection |
+| `SUPABASE_URL` | Supabase project URL for Auth and Data API compatibility |
+| `SUPABASE_SECRET_KEY` | Server Data API compatibility if DATABASE_URL is absent; type Secret |
+| `SUPABASE_PUBLISHABLE_KEY` | Supabase Auth publishable key, used server-side |
+| `OPERATIONS_ALLOWED_EMAILS` | Confirmed staff emails, comma separated; empty denies all staff access |
 
-The code does **not** depend on OpenAI hosting, Cloudflare bindings, Vinext, or ChatGPT authentication. Existing records in the previous hosted demo are not migrated automatically.
+`DATABASE_URL` is not an API key. Mark password-bearing connection strings as Secret, URL-encode password characters and keep TLS certificate verification enabled. Use separate Preview/Development values where appropriate. When DATABASE_URL is set, every storage operation uses Prisma. Without it the existing Data API adapter is used. Connection failures never switch backends silently.
 
-## Prisma operations data
-
-Prisma 7.9 maps `Shipment` to `public.axic_shipments` and `SupportTicket` to `public.axic_tickets`. Existing JSONB shipment payloads keep bookings, assignments, milestones and tracking intact. Status updates use an atomic version-checked update; stale dispatch edits return 409. Tickets retain their dates, status and ordering.
-
-In **Kodryn Technologies → Portfolio Design → Connect**, copy the **Transaction pooler** PostgreSQL connection string (port 6543). Replace the database password placeholder privately and URL-encode special characters in the password. In Vercel's AXIC project, add it as **`DATABASE_URL`**, type **Secret**, for Production. Use an isolated Preview database when available. Redeploy after saving. This is a database connection string, not a Supabase API secret key. Keep certificate verification enabled; use Supabase's recommended TLS connection settings.
-
-For local Prisma CLI/Studio use **`DIRECT_URL`** with the **Session pooler** string (port 5432), or the direct connection if your network supports IPv6. Keep this admin connection in your ignored `.env.local`; runtime uses only `DATABASE_URL`. You can use the dashboard's existing database user initially; for long-term operation provision a dedicated runtime role with access only to the two AXIC tables and the required RLS permissions.
-
-| Variable | Connection | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | Transaction pooler, port 6543 | Prisma runtime on Vercel; private |
-| `DIRECT_URL` | Session pooler, port 5432, or direct | Local Prisma CLI / Studio; private |
-| `SUPABASE_URL`, `SUPABASE_SECRET_KEY` | Existing Data API configuration | Compatibility until `DATABASE_URL` is added |
-
-When `DATABASE_URL` is present, all customer/operations APIs use Prisma. Without it, the existing Supabase REST adapter continues to work during setup. Prisma connection failures return a sanitized error and never fall back to a different backend. Client generation runs during install and build and needs no credentials or database connection.
-
-```sh
-pnpm db:generate
-pnpm db:validate
-pnpm db:studio
-```
-
-The AXIC tables already exist in Portfolio Design: **do not rerun the bootstrap SQL**. No database migration is needed for this ORM adoption. Do not run `prisma db push`, reset, or auto-migrate this shared database: the schema deliberately includes only AXIC tables, so destructive schema synchronization could affect other projects. Continue making reviewed AXIC-specific SQL migrations through Supabase, preserving its CHECK constraints, grants and RLS. Prisma does not express those security rules in its schema. Builds never run migrations.
+Prisma generation runs at install/build without database credentials. Builds never migrate. Do not run reset, db push or auto-migrate against this shared project; Prisma's schema includes only AXIC tables. Use reviewed AXIC-specific SQL migrations through Supabase to preserve unrelated data and table security.
 
 ## Photography
 
 Hero: custom generated editorial freight-truck scene in `public/images/axic-freight-hero.webp`, designed for AXIC’s ink/teal palette. Generated with the built-in image tool using this prompt: “A white freight truck with a graphite trailer at a modern warehouse at blue hour, realistic editorial photography, deep petrol teal/charcoal, quiet negative space, no text or logos.” Hosted locally and served responsively through Next.js Image. The scene is illustrative; coverage and dashboard SVG graphics remain.
 
-## Local development
+## Local development and validation
 
-Node 22.13+ (Node 24 is recommended for the test runner), pnpm 11.25.0.
+Node 22.13+ (Node 24 recommended), pnpm 11.25.0.
 
 ```sh
 corepack enable
 pnpm install --frozen-lockfile
 cp .env.example .env.local
-# Add real local-development values privately to .env.local.
+# Configure credentials privately in the ignored local file.
 pnpm dev
+pnpm test
+pnpm typecheck
+pnpm build
 ```
 
-Run `pnpm typecheck`, `pnpm test`, and `pnpm build`. Tests exercise the actual API handlers and both storage adapters using mocked database clients, including optimistic concurrency and secret/error handling. A real Supabase project and browser QA are required for deployment verification.
+Tests exercise real API handlers, both storage adapters and the Supabase SSR SDK using mocked database/Auth services. They cover the full dispatch lifecycle, no-op saves, edit labels, old FCT records, retired sample IDs, protected management APIs, session verification, logout and concurrency. They do not verify live Supabase credentials or carrier delivery.
 
-## Privacy and demo boundaries
+Staff pages and management APIs require provider-verified authorised users. Anonymous booking/support creation and tracking by ID remain public. Public tracking omits customer, driver and amount. Customer ownership and public submission abuse controls are separate future work; private credentials do not make the whole customer site private.
 
-- `.env`, `.env.local`, all environment variants, `.vercel` and build output are ignored. Only `.env.example` with placeholders belongs in Git.
-- The Supabase secret stays server-side and is never returned in API responses. Database errors are sanitized before being returned to clients.
-- RLS and grants block browsers from calling the tables directly. The server secret can access them.
-- The customer website, quote/booking and tracking remain public. The operations page, full shipment list, dispatch edits and ticket inbox require an authorised staff session. Public tracking omits customer, driver and pricing information.
-- All sample companies, rates and shipment events are illustrative. No carrier API, live GPS, physical shipment, payments or external messaging is connected. Use fictional data only.
-- Staff authentication/authorization is implemented. Customer tracking ownership controls, public booking/ticket abuse protection and carrier integration are still needed before collecting real customer data. GPS remains deferred.
+## Dispatch progress
+
+Open a shipment from **Shipments** or **Dispatch board**, select the next **Status**, then save. The chosen status appears in the portal and public tracking. Driver/location edits keep the shipment's current status and display their own event labels. A save with no changes adds no new event.
+
+Historic repeated-status events retain their timestamps and display “Update recorded” or “Location updated”. Existing FCT destinations and event locations display Abuja without deleting or rebuilding history. Progress changes when staff record a milestone; it does not advance automatically with time.
 
 ## Staff login setup
 
