@@ -1,4 +1,4 @@
-import {storage,StorageError} from '@/lib/supabase-server';
+import {storage,StorageError} from '@/lib/storage-server';
 import {demoShipments,quote,statuses,type QuoteInput,type Shipment} from '@/lib/freight';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';

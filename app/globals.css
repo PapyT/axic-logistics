@@ -12,3 +12,17 @@
 .brand-sub{letter-spacing:2.7px}.preview-nav .brand-sub{letter-spacing:1.8px}@media(max-width:650px){.brand-sub{letter-spacing:2.5px}}
 
 @media(prefers-reduced-motion:reduce){.network .moving-node{display:none}}
+
+/* Locally hosted, responsive editorial freight photography. */
+.hero-photography{min-height:480px;background:#152b29;isolation:isolate}
+.hero-photo{object-fit:cover;object-position:50% 42%;z-index:-2}
+.hero-photo-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(9,25,25,.55),rgba(9,25,25,.08) 38%,rgba(9,25,25,.82))}
+.hero-photography .visual-top,.hero-photography .visual-bottom{z-index:1;color:#fff}
+.hero-photography .signal{color:#e5f4e8}
+.hero-photo-caption{position:absolute;left:30px;right:25px;top:25%;color:#fff}
+.hero-photo-caption .eyebrow{color:#d2ee9b;font-size:10px;letter-spacing:.15em}
+.hero-photo-caption p{font-size:clamp(28px,3vw,43px);font-weight:600;line-height:1.13;letter-spacing:-.04em;margin:14px 0 20px}
+.hero-photo-caption .micro{letter-spacing:.18em;color:#ecf1ed}
+.hero-photography .floating-card{animation:none;text-decoration:none;bottom:65px;transition:transform .2s,box-shadow .2s}
+.hero-photography .floating-card:hover{transform:translate(-50%,-3px);box-shadow:0 12px 35px #0004}
+@media(max-width:650px){.hero-photography{min-height:380px;height:380px}.hero-photo-caption{left:22px;top:24%}.hero-photo-caption p{font-size:32px}.hero-photography .visual-top .signal{display:none}.hero-photography .visual-bottom{font-size:8px}.hero-photography .floating-card{bottom:55px}}

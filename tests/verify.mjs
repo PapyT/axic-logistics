@@ -1,8 +1,10 @@
 import ts from 'typescript';
+delete process.env.DATABASE_URL;
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import assert from 'node:assert/strict';
 mkdirSync('work',{recursive:true});
-for(const name of ['shipments','support']){const source=readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/supabase-server'","'../lib/supabase-server.ts'").replace("'@/lib/freight'","'../lib/freight.ts'");writeFileSync(`work/${name}.mjs`,ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText)}
+for(const name of ['shipments','support']){const source=readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/storage-server'","'./storage-server.mjs'").replace("'@/lib/freight'","'../lib/freight.ts'");writeFileSync(`work/${name}.mjs`,ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText)}
+writeFileSync('work/storage-server.mjs',ts.transpileModule(readFileSync('lib/storage-server.ts','utf8').replaceAll("'./supabase-server'","'../lib/supabase-server.ts'"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);
 const api=await import('../work/shipments.mjs');const support=await import('../work/support.mjs');const {quote,states,locations}=await import('../lib/freight.ts');
 const request=(method,body,url='https://test.local/api/shipments')=>new Request(url,{method,...(body?{headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{})});
 const shipmentRows=new Map(),ticketRows=new Map(),calls=[];
@@ -35,7 +37,7 @@ r=await support.GET();assert.equal((await r.json()).length,1);
 r=await support.PATCH(request('PATCH',{id:ticket.id,status:'Resolved'}));assert.equal(r.status,200);assert.equal((await r.json()).status,'Resolved');
 r=await support.POST(request('POST',{subject:'',message:''}));assert.equal(r.status,400);
 r=await support.PATCH(request('PATCH',{id:'UNKNOWN',status:'Resolved'}));assert.equal(r.status,404);
-const {storage}=await import('../lib/supabase-server.ts');const old=await storage.getShipment(booking.id);assert(await storage.updateShipment(old,{...old.payload,status:'At hub'}));assert.equal(await storage.updateShipment(old,{...old.payload,status:'Delivered'}),undefined);
+const {storage}=await import('../work/storage-server.mjs');const old=await storage.getShipment(booking.id);assert(await storage.updateShipment(old,{...old.payload,status:'At hub'}));assert.equal(await storage.updateShipment(old,{...old.payload,status:'Delivered'}),undefined);
 delete process.env.SUPABASE_SECRET_KEY;r=await api.GET(request('GET'));assert.equal(r.status,503);assert(!JSON.stringify(await r.json()).includes('UNIT_TEST'));
 process.env.SUPABASE_SECRET_KEY='sb_secret_UNIT_TEST_ONLY';globalThis.fetch=async()=>Response.json({message:'private backend detail'},{status:401});r=await api.POST(request('POST',data));assert.equal(r.status,503);assert(!JSON.stringify(await r.json()).includes('private backend detail'));
 globalThis.fetch=originalFetch;delete process.env.SUPABASE_URL;delete process.env.SUPABASE_SECRET_KEY;

@@ -1,4 +1,4 @@
-import {storage} from '@/lib/supabase-server';
+import {storage} from '@/lib/storage-server';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 const unavailable=()=>Response.json({error:'Support is unavailable. Check server configuration or try again.'},{status:503});

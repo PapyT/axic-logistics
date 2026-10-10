@@ -19,7 +19,7 @@ export async function supabaseRequest<T>(table:'axic_shipments'|'axic_tickets',q
   if(!response.ok)throw new StorageError(response.status);
   return response.json() as Promise<T>;
 }
-export const storage={
+export const restStorage={
   listShipments:()=>supabaseRequest<ShipmentRow[]>('axic_shipments',{select:'id,payload,version'}),
   getShipment:async(id:string)=>(await supabaseRequest<ShipmentRow[]>('axic_shipments',{id:'eq.'+id,select:'id,payload,version',limit:'1'}))[0],
   createShipment:async(payload:import('./freight').Shipment)=>(await supabaseRequest<ShipmentRow[]>('axic_shipments',{},'POST',{id:payload.id,payload,version:0}))[0],

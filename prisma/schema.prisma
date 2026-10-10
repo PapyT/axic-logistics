@@ -1,0 +1,23 @@
+// Map existing AXIC tables without renaming or copying their data.
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+datasource db {
+  provider = "postgresql"
+}
+model Shipment {
+  id      String @id @db.Text
+  payload Json   @db.JsonB
+  version Int    @default(0)
+  @@map("axic_shipments")
+}
+model SupportTicket {
+  id      String   @id @db.Text
+  subject String   @db.Text
+  message String   @db.Text
+  status  String   @default("Open") @db.Text
+  created DateTime @default(now()) @db.Timestamptz(6)
+  @@index([created(sort: Desc)], map: "axic_tickets_created_idx")
+  @@map("axic_tickets")
+}
