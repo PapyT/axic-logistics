@@ -1,6 +1,6 @@
 # AXIC Logistics
 
-An original logistics portfolio project built with **Next.js**, **Vercel**, **Prisma**, and **Supabase Postgres**. The customer site connects freight quotes, booking and tracking to a demo operations workspace.
+An original logistics portfolio project built with **Next.js**, **Vercel**, **Prisma**, and **Supabase Postgres**. The customer site connects freight quotes, booking and tracking to a staff-only operations workspace.
 
 ## Features
 
@@ -57,7 +57,7 @@ The AXIC tables already exist in Portfolio Design: **do not rerun the bootstrap 
 
 ## Photography
 
-Hero: Pexels photo [3057963](https://www.pexels.com/photo/3057963/), aerial container vessel and port cranes, [download source](https://mygermany.com/wp-content/uploads/2025/05/pexels-photo-3057963-3057963.jpg). Pexels permits commercial use under its [license](https://www.pexels.com/license/). The image is hosted locally and served responsively through Next.js Image; it is illustrative stock photography, not an AXIC-owned fleet. Coverage and dashboard SVG graphics remain.
+Hero: custom generated editorial freight-truck scene in `public/images/axic-freight-hero.webp`, designed for AXIC’s ink/teal palette. Generated with the built-in image tool using this prompt: “A white freight truck with a graphite trailer at a modern warehouse at blue hour, realistic editorial photography, deep petrol teal/charcoal, quiet negative space, no text or logos.” Hosted locally and served responsively through Next.js Image. The scene is illustrative; coverage and dashboard SVG graphics remain.
 
 ## Local development
 
@@ -78,6 +78,33 @@ Run `pnpm typecheck`, `pnpm test`, and `pnpm build`. Tests exercise the actual A
 - `.env`, `.env.local`, all environment variants, `.vercel` and build output are ignored. Only `.env.example` with placeholders belongs in Git.
 - The Supabase secret stays server-side and is never returned in API responses. Database errors are sanitized before being returned to clients.
 - RLS and grants block browsers from calling the tables directly. The server secret can access them.
-- Keeping secrets private does not make the website, its demo API or operations dashboard private. The project intentionally remains a public portfolio demonstration.
+- The customer website, quote/booking and tracking remain public. The operations page, full shipment list, dispatch edits and ticket inbox require an authorised staff session. Public tracking omits customer, driver and pricing information.
 - All sample companies, rates and shipment events are illustrative. No carrier API, live GPS, physical shipment, payments or external messaging is connected. Use fictional data only.
-- Before collecting real customer data, add operator authentication/authorization, customer ownership controls, abuse protection and carrier integration. GPS integration will need additional configuration when implemented.
+- Staff authentication/authorization is implemented. Customer tracking ownership controls, public booking/ticket abuse protection and carrier integration are still needed before collecting real customer data. GPS remains deferred.
+
+## Staff login setup
+
+Staff authentication uses Supabase Auth email/password and the official SSR SDK. Cookies are HttpOnly, SameSite=Lax, Secure in production. The proxy refreshes tokens; pages and API handlers validate the user with Supabase before allowing access. No tokens or password are returned to frontend JavaScript. There is no public signup. An empty allowlist denies everyone, and other users of the shared Supabase project cannot access AXIC operations.
+
+1. In Supabase → Portfolio Design → Authentication → Users, **Add user → Create new user**. Enter your staff email and a strong password privately; confirm the email. No invitation is sent by this app. For password resets, manage the user in Supabase or use your configured Auth recovery process.
+2. In Supabase → Settings → API Keys, copy the **publishable** key. Add it to Vercel as `SUPABASE_PUBLISHABLE_KEY`. This app uses it server-side; it is different from `SUPABASE_SECRET_KEY` and `DATABASE_URL`.
+3. In Vercel, add `OPERATIONS_ALLOWED_EMAILS` with that confirmed staff email. Separate multiple authorised staff emails with commas. Set Production and the intended Preview/Development values. Redeploy.
+4. Open `/operations`; it redirects to `/login`. Sign in, update a demo shipment, check public tracking and sign out. Removing an email from the allowlist and redeploying removes its portal permission.
+
+GET `/api/shipments` (full list), PATCH `/api/shipments`, GET `/api/support`, and PATCH `/api/support` require staff access. Cookie-authenticated writes and login/logout require the same-origin Origin header. Public POST booking/support and GET shipment by tracking ID remain available. Supabase applies its Auth rate limits. Auth responses and session-refresh routes use private/no-store caching.
+
+## Changing quote prices
+
+Edit **`lib/pricing.ts`**, then commit and deploy. Client estimates and server booking calculations share this configuration. The server always computes the booking amount itself; a browser cannot supply a lower amount.
+
+| Route band | Base NGN | Per billable kg NGN | Handling NGN |
+| --- | ---: | ---: | ---: |
+| Domestic (Nigeria) | 4,500 | 450 | 750 |
+| Regional (listed African destinations) | 16,000 | 1,400 | 2,000 |
+| Overseas (UK / US / Canada) | 35,000 | 4,500 | 5,000 |
+
+Service multiplier: Road 1; Air 2.8; Ocean 0.7. Billable kg = greater of actual kg and L × W × H (cm) / 5,000. Freight = rounded ((base + billable kg × per-kg price) × service multiplier). Optional protection = rounded (freight × 2.5%). Total = freight + protection + handling. Handling is not multiplied.
+
+Example: 25 kg Lagos → Abuja road freight with 40 × 30 × 30 cm and protection: billable 25 kg; freight 15,750; protection 394; handling 750; total **NGN 16,894**. If domestic base becomes 5,000, change `bands.domestic.base`; the same new quote becomes **NGN 17,406**. Previously stored bookings retain their original amount. A quote displayed before a deployment can be recalculated at booking time with the newly deployed rates.
+
+These are illustrative zone bands, not live carrier prices. Domestic state pairs currently share the same rates. A future staff-editable rate screen should store a versioned rate card in the database, include effective dates and route-specific surcharges, and make the public calculator fetch that same current rate card. No pricing administration screen has been added in this revision.

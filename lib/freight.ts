@@ -1,3 +1,4 @@
+import {pricing} from './pricing';
 export const states = ['Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno','Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','Federal Capital Territory','Gombe','Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba','Yobe','Zamfara'];
 export const international = ['Accra, Ghana','Benin','Cameroon',"Côte d’Ivoire",'Togo','United Kingdom','United States','Canada'];
 export const locations = [...states,...international];
@@ -12,8 +13,13 @@ export function quote(q:QuoteInput){
  const overseas=[q.origin,q.destination].some(s=>['United Kingdom','United States','Canada'].includes(s));
  const regional=[q.origin,q.destination].some(s=>international.includes(s));
  if(overseas&&q.service==='Road freight')throw new Error('Choose air or ocean freight for intercontinental shipping.');
- const volumetric=q.length*q.width*q.height/5000; const billable=Math.max(q.weight,volumetric);const factor=q.service==='Air express'?2.8:q.service==='Ocean freight'?.7:1;
- const base=(overseas?35000:regional?16000:4500)*factor;const freight=Math.round(base+billable*(overseas?4500:regional?1400:450)*factor);const protection=q.insurance?Math.round(freight*.025):0;const handling=overseas?5000:regional?2000:750;
+ const volumetric=q.length*q.width*q.height/pricing.volumetricDivisor;
+ const billable=Math.max(q.weight,volumetric);
+ const factor=pricing.serviceMultipliers[q.service as keyof typeof pricing.serviceMultipliers];
+ const rates=pricing.bands[overseas?'overseas':regional?'regional':'domestic'];
+ const freight=Math.round((rates.base+billable*rates.perKg)*factor);
+ const protection=q.insurance?Math.round(freight*pricing.protectionRate):0;
+ const handling=rates.handling;
  return {billable,volumetric,freight,protection,handling,total:freight+protection+handling,eta:q.service==='Ocean freight'?'21–35 business days':q.service==='Air express'?'2–5 business days':regional?'5–9 business days':'2–4 business days'};
 }
 export const money=(n:number)=>new Intl.NumberFormat('en-NG',{style:'currency',currency:'NGN',maximumFractionDigits:0}).format(n);

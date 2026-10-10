@@ -1,3 +1,4 @@
+import {requireOperator} from '@/lib/auth-server';
 import {storage,StorageError} from '@/lib/storage-server';
 import {demoShipments,quote,statuses,type QuoteInput,type Shipment} from '@/lib/freight';
 export const runtime='nodejs';
@@ -6,8 +7,8 @@ const unavailable=()=>Response.json({error:'The shipment service is unavailable.
 export async function GET(req:Request){
  try{
   const id=new URL(req.url).searchParams.get('id')?.trim().toUpperCase();
-  if(id){if(id.length>40)return Response.json({error:'Invalid tracking ID.'},{status:400});const row=await storage.getShipment(id);const shipment=row?.payload??demoShipments.find(s=>s.id===id);return Response.json(shipment??{error:'Shipment not found. Check the tracking ID or try AX-204810.'},{status:shipment?200:404,headers:{'Cache-Control':'no-store'}});}
-  const rows=await storage.listShipments();const map=new Map(demoShipments.map(s=>[s.id,s]));rows.forEach(r=>map.set(r.id,r.payload));return Response.json([...map.values()].sort((a,b)=>b.created.localeCompare(a.created)),{headers:{'Cache-Control':'no-store'}});
+  if(id){if(id.length>40)return Response.json({error:'Invalid tracking ID.'},{status:400});const row=await storage.getShipment(id);const shipment=row?.payload??demoShipments.find(s=>s.id===id);const publicShipment=shipment?{id:shipment.id,origin:shipment.origin,destination:shipment.destination,service:shipment.service,weight:shipment.weight,status:shipment.status,location:shipment.location,events:shipment.events}:undefined;return Response.json(publicShipment??{error:'Shipment not found. Check the tracking ID or try AX-204810.'},{status:shipment?200:404,headers:{'Cache-Control':'no-store'}});}
+  const denied=await requireOperator();if(denied)return denied;const rows=await storage.listShipments();const map=new Map(demoShipments.map(s=>[s.id,s]));rows.forEach(r=>map.set(r.id,r.payload));return Response.json([...map.values()].sort((a,b)=>b.created.localeCompare(a.created)),{headers:{'Cache-Control':'no-store'}});
  }catch{return unavailable();}
 }
 export async function POST(req:Request){
@@ -17,6 +18,7 @@ export async function POST(req:Request){
  try{await storage.createShipment(s);return Response.json(s,{status:201});}catch{return unavailable();}
 }
 export async function PATCH(req:Request){
+ const denied=await requireOperator(req);if(denied)return denied;
  let body:Record<string,unknown>;
  try{body=await req.json() as typeof body;if(!body||!statuses.includes(String(body.status))||typeof body.id!=='string'||body.id.length>40||typeof body.location!=='string'||!body.location.trim()||body.location.length>120||typeof body.driver!=='string'||body.driver.length>80)throw new Error();}catch{return Response.json({error:'Provide a valid status, location and driver.'},{status:400});}
  try{
