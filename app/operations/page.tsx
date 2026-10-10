@@ -5,5 +5,5 @@ export const dynamic='force-dynamic';
 export default async function OperationsPage(){
  const user=await getOperator();
  if(!user)redirect('/login');
- return <Operations email={user.email??'AXIC operator'}/>;
+ return <Operations email={user.email??'AXIC operator'} role={user.axicRole}/>;
 }

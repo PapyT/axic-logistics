@@ -1,3 +1,5 @@
+import {contact,goodsInput,type GoodInput,type Contact} from '@/lib/consignment';
+import {consignments} from '@/lib/consignment-server';
 import {requireOperator} from '@/lib/auth-server';
 import {storage,StorageError} from '@/lib/storage-server';
 import {quote,statuses,normaliseShipment,locationName,type QuoteInput,type Shipment} from '@/lib/freight';
@@ -13,10 +15,10 @@ export async function GET(req:Request){
  }catch{return unavailable();}
 }
 export async function POST(req:Request){
- let body:QuoteInput&{customer:string};let estimate:ReturnType<typeof quote>;
- try{body=await req.json() as typeof body;estimate=quote(body);body={...body,origin:locationName(body.origin),destination:locationName(body.destination)};if(typeof body.customer!=='string'||!body.customer.trim()||body.customer.length>80)throw new Error('Enter a customer or company name, up to 80 characters.');}catch(e){return Response.json({error:e instanceof SyntaxError?'Invalid booking request.':e instanceof Error?e.message:'Invalid booking request.'},{status:400});}
- const time=new Date().toISOString();const s:Shipment={id:'AX-'+crypto.randomUUID().slice(0,8).toUpperCase(),origin:body.origin,destination:body.destination,service:body.service,weight:body.weight,amount:estimate.total,status:'Booked',customer:body.customer.trim(),driver:'Unassigned',location:body.origin,created:time,events:[{status:'Booked',location:body.origin,time}]};
- try{await storage.createShipment(s);return Response.json(s,{status:201});}catch{return unavailable();}
+ let body:QuoteInput&{customer:string;sender?:Contact;receiver?:Contact;kind?:string;goods?:GoodInput[]};let estimate:ReturnType<typeof quote>;let sender:Contact|undefined,receiver:Contact|undefined,goods:GoodInput[]=[];
+ try{body=await req.json() as typeof body;if(body.kind!==undefined&&!['shipment','consignment'].includes(body.kind))throw Error('Choose a valid booking type.');if(body.kind==='consignment'){const denied=await requireOperator(req);if(denied)return denied;sender=contact(body.sender);receiver=contact(body.receiver);goods=goodsInput(body.goods);body.weight=goods.reduce((sum,g)=>sum+g.weight,0);}else if(body.sender||body.receiver){sender=contact(body.sender);receiver=contact(body.receiver);}estimate=quote(body);body={...body,origin:locationName(body.origin),destination:locationName(body.destination)};if(typeof body.customer!=='string'||!body.customer.trim()||body.customer.length>80)throw new Error('Enter a customer or company name, up to 80 characters.');}catch(e){return Response.json({error:e instanceof SyntaxError?'Invalid booking request.':e instanceof Error?e.message:'Invalid booking request.'},{status:400});}
+ const time=new Date().toISOString();const s:Shipment={id:'AX-'+crypto.randomUUID().slice(0,8).toUpperCase(),origin:body.origin,destination:body.destination,service:body.service,weight:body.weight,amount:estimate.total,status:'Booked',customer:body.customer.trim(),driver:'Unassigned',location:body.origin,created:time,...(sender&&receiver?{sender,receiver}:{}),kind:goods.length?'consignment':'shipment',events:[{status:'Booked',location:body.origin,time}]};
+ try{if(goods.length)await consignments.create(s,sender!,receiver!,goods);else await storage.createShipment(s);return Response.json(s,{status:201});}catch{return unavailable();}
 }
 export async function PATCH(req:Request){
  const denied=await requireOperator(req);if(denied)return denied;

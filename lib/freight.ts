@@ -3,7 +3,7 @@ export const states = ['Abia','Abuja','Adamawa','Akwa Ibom','Anambra','Bauchi','
 export const international = ['Accra, Ghana','Benin','Cameroon',"Côte d’Ivoire",'Togo','United Kingdom','United States','Canada'];
 export const locations = [...states,...international];
 export const statuses = ['Booked','Collected','In transit','At hub','Out for delivery','Delivered','Exception'];
-export type Shipment = {id:string;origin:string;destination:string;service:string;weight:number;amount:number;status:string;customer:string;driver:string;location:string;created:string;events:{status:string;location:string;time:string;label?:string}[]};
+export type Shipment = {id:string;origin:string;destination:string;service:string;weight:number;amount:number;status:string;customer:string;driver:string;location:string;created:string;sender?:import('./consignment').Contact;receiver?:import('./consignment').Contact;kind?:'shipment'|'consignment';events:{status:string;location:string;time:string;label?:string}[]};
 export type QuoteInput = {origin:string;destination:string;service:string;weight:number;length:number;width:number;height:number;insurance:boolean};
 // Keep previously stored FCT records and older booking clients compatible.
 export const locationName=(value:string)=>value.trim()==='Federal Capital Territory'?'Abuja':value.trim();

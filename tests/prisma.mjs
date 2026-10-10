@@ -16,7 +16,7 @@ const model=(rows)=>({
 });
 globalThis.axicTestStorage=createPrismaStorage({shipment:model(shipments),supportTicket:model(tickets)});
 writeFileSync('work/prisma-facade.mjs',"export const storage=globalThis.axicTestStorage;export {StorageError} from '../lib/supabase-server.ts';");
-for(const name of ['shipments','support'])writeFileSync(`work/prisma-${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/storage-server'","'./prisma-facade.mjs'").replace("'@/lib/freight'","'./freight.mjs'").replace("'@/lib/auth-server'","'./workflow-auth.mjs'")));
+for(const name of ['shipments','support'])writeFileSync(`work/prisma-${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/storage-server'","'./prisma-facade.mjs'").replace("'@/lib/freight'","'./freight.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/auth-server'","'./workflow-auth.mjs'")));
 const api=await import('../work/prisma-shipments.mjs'),support=await import('../work/prisma-support.mjs');
 const req=(method,body,id='')=>new Request('https://test.local/api/shipments'+(id?'?id='+id:''),{method,...(body?{body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}:{})});
 const data={origin:'Lagos',destination:'Abuja',service:'Road freight',weight:25,length:40,width:30,height:30,insurance:true,customer:'Prisma Demo'};

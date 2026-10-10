@@ -10,6 +10,7 @@ model Shipment {
   id      String @id @db.Text
   payload Json   @db.JsonB
   version Int    @default(0)
+  consignment Consignment?
   @@map("axic_shipments")
 }
 model SupportTicket {
@@ -20,4 +21,27 @@ model SupportTicket {
   created DateTime @default(now()) @db.Timestamptz(6)
   @@index([created(sort: Desc)], map: "axic_tickets_created_idx")
   @@map("axic_tickets")
+}
+
+model Consignment {
+  id String @id @db.Text
+  shipmentId String @unique @map("shipment_id") @db.Text
+  shipment Shipment @relation(fields:[shipmentId], references:[id])
+  sender Json @db.JsonB
+  receiver Json @db.JsonB
+  created DateTime @default(now()) @db.Timestamptz(6)
+  goods Good[]
+  @@index([created(sort:Desc)], map:"axic_consignments_created_idx")
+  @@map("axic_consignments")
+}
+model Good {
+  id String @id @db.Uuid
+  description String @db.Text
+  weight Float
+  consignmentId String? @map("consignment_id") @db.Text
+  consignment Consignment? @relation(fields:[consignmentId],references:[id])
+  created DateTime @default(now()) @db.Timestamptz(6)
+  assignedAt DateTime? @map("assigned_at") @db.Timestamptz(6)
+  @@index([consignmentId],map:"axic_goods_consignment_idx")
+  @@map("axic_goods")
 }

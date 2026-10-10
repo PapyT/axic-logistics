@@ -2,7 +2,7 @@
 export type ShipmentRow={id:string;payload:import('./freight').Shipment;version:number};
 export type Ticket={id:string;subject:string;message:string;status:string;created:string};
 export class StorageError extends Error {readonly status:number;constructor(status:number){super('Database request failed.');this.status=status}}
-export async function supabaseRequest<T>(table:'axic_shipments'|'axic_tickets',query:Record<string,string>={},method='GET',body?:unknown):Promise<T>{
+export async function supabaseRequest<T>(table:'axic_shipments'|'axic_tickets'|'axic_consignments'|'axic_goods'|'rpc/axic_create_consignment'|'rpc/axic_assign_good',query:Record<string,string>={},method='GET',body?:unknown):Promise<T>{
   if(typeof window!=='undefined')throw new Error('Server-only database access.');
   const url=process.env.SUPABASE_URL;
   const key=process.env.SUPABASE_SECRET_KEY;

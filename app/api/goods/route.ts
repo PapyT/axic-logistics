@@ -1,0 +1,9 @@
+import {requireOperator} from '@/lib/auth-server';
+import {consignments} from '@/lib/consignment-server';
+import {goodInput,parseGoodCode} from '@/lib/consignment';
+import {StorageError} from '@/lib/supabase-server';
+export const dynamic='force-dynamic';
+const unavailable=()=>Response.json({error:'The item service is unavailable.'},{status:503});
+export async function GET(req:Request){const denied=await requireOperator();if(denied)return denied;let id:string;try{id=parseGoodCode(new URL(req.url).searchParams.get('code')??'')}catch(e){return Response.json({error:(e as Error).message},{status:400})}try{const item=await consignments.getGood(id);return Response.json(item??{error:'Item not found.'},{status:item?200:404,headers:{'Cache-Control':'private, no-store'}})}catch{return unavailable()}}
+export async function POST(req:Request){const denied=await requireOperator(req);if(denied)return denied;let input;try{input=goodInput(await req.json())}catch(e){return Response.json({error:(e as Error).message},{status:400})}try{return Response.json(await consignments.createGood(input),{status:201})}catch{return unavailable()}}
+export async function PATCH(req:Request){const denied=await requireOperator(req);if(denied)return denied;let id:string,consignmentId:string;try{const body=await req.json();id=parseGoodCode(body.code);consignmentId=body.consignmentId;if(typeof consignmentId!=='string'||!/^AX-[A-F0-9]{8}$/.test(consignmentId))throw Error('Select a valid consignment.')}catch(e){return Response.json({error:(e as Error).message},{status:400})}try{return Response.json(await consignments.assign(id,consignmentId))}catch(e){if(e instanceof StorageError&&e.status===409)return Response.json({error:'This item belongs to another consignment. It was not reassigned.'},{status:409});if(e instanceof StorageError&&e.status===404)return Response.json({error:'Item or consignment not found.'},{status:404});return unavailable()}}
