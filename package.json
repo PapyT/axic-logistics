@@ -12,7 +12,7 @@
     "build": "prisma generate && next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/verify.mjs && node tests/prisma.mjs && node tests/auth.mjs && node tests/consignments.mjs && node tests/receipts.mjs && node tests/workflow.mjs && node tests/state-access.mjs",
+    "test": "node tests/verify.mjs && node tests/prisma.mjs && node tests/auth.mjs && node tests/consignments.mjs && node tests/receipts.mjs && node tests/workflow.mjs && node tests/state-access.mjs && node tests/chat.mjs",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
@@ -20,12 +20,14 @@
     "db:seed:staff": "node scripts/seed-state-staff.mjs"
   },
   "dependencies": {
+    "@ai-sdk/react": "4.0.130",
     "@prisma/adapter-pg": "7.9.0",
     "@prisma/client": "7.9.0",
     "@supabase/ssr": "0.10.0",
     "@supabase/supabase-js": "2.116.0",
     "@zxing/browser": "0.1.5",
     "@zxing/library": "0.21.3",
+    "ai": "7.0.127",
     "dotenv": "17.2.3",
     "lucide-react": "1.31.0",
     "next": "16.3.4",

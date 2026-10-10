@@ -123,3 +123,11 @@ model QuoteRequest {
   @@index([created(sort: Desc)], map: "axic_quote_requests_created_idx")
   @@map("axic_quote_requests")
 }
+
+// Anonymous assistant usage counters, never conversation contents.
+model ChatLimit {
+  bucket String @id @db.Text
+  uses Int @default(0)
+  expires DateTime @db.Timestamptz(6)
+  @@map("axic_chat_limits")
+}

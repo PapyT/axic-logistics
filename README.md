@@ -156,3 +156,26 @@ Staff sign-in opens a dedicated **My state** workspace with local collections, i
 API handlers enforce the same state boundary: private shipment and consignment lists include only jobs whose origin or destination matches trusted `app_metadata.axic_state`. Goods from unrelated states or unassigned goods return 404 to staff. Generic shipment changes, legacy receipt recording, support management and quote-request management require admin access. Staff progress managed handovers through the existing claim/scan API; older manual records remain administrator-managed. Public tracking by ID remains available without contacts, and public intake remains available without staff login.
 
 Validation: `tests/state-access.mjs` exercises real route handlers for state scope, blank states, unrelated QR IDs, admin-only APIs, public tracking privacy and public quote intake in both storage adapters. `tests/quote-intake-db.sql` checks status persistence, no shipment side effects and private grants in a rolled-back transaction.
+
+### Customer AI assistant
+
+The homepage **Ask AXIC** assistant uses Vercel AI SDK 7 through AI Gateway.
+Vercel OIDC authenticates deployed functions; no model key is shipped to the
+browser. `AI_GATEWAY_MODEL` selects the model, `AXIC_CHAT_ENABLED=true` enables
+requests, and sensitive `CHAT_RATE_LIMIT_SALT` hashes IP usage identities.
+Local development can use server-only `AI_GATEWAY_API_KEY`. Apply
+`supabase/chat-limits.sql` to enable shared usage limits.
+
+The assistant has two read tools: current freight estimates using `quote()` and
+public shipment milestones with contacts removed. Booking and support buttons
+open the existing forms for customer review and submission. It cannot change
+shipments, access team accounts or take payment. Tracking is recorded milestones,
+not GPS. Chat histories stay in browser memory, are sent to the model provider for
+responses, and are not stored in the AXIC database.
+
+Startup limits: 100 requests/day across all deployments sharing this database,
+20/hour per connecting IP, 5/minute per IP; 12 exchanges, 16,000 context characters,
+700 output tokens per step, at most 3 model steps and a 50-second timeout. These
+are request/token limits, not a monetary budget. AI Gateway usage/spend appears
+in the Vercel dashboard. Set `AXIC_CHAT_ENABLED=false` and redeploy to disable.
+No automatic credit purchases are configured.
