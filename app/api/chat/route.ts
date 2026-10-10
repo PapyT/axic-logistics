@@ -21,6 +21,11 @@ export async function POST(req:Request){
   const identity=createHash('sha256').update(process.env.CHAT_RATE_LIMIT_SALT+'|'+ip).digest('hex');
   const allowed=await consumeChat(identity);
   if(!allowed)return Response.json({error:'The assistant has reached its usage limit. Please use the calculator, tracking or support form.'},{status:429,headers:{'Retry-After':'60'}});
-  return await createAgentUIStreamResponse({agent:createChatAgent(),uiMessages:messages,abortSignal:req.signal,timeout:50000,sendReasoning:false,onError:error=>{console.error('AXIC assistant generation failed',{name:error instanceof Error?error.name:'Unknown',statusCode:error&&typeof error==='object'&&'statusCode' in error?error.statusCode:undefined});return 'The assistant could not finish this response. Please try again or use the forms below.';},headers:{'Cache-Control':'no-store'}});
+  return await createAgentUIStreamResponse({agent:createChatAgent(),uiMessages:messages,abortSignal:req.signal,timeout:50000,sendReasoning:false,onError:error=>{console.error('AXIC assistant generation failed',{name:error instanceof Error?error.name:'Unknown',statusCode:error&&typeof error==='object'&&'statusCode' in error?error.statusCode:undefined});// Short-lived, secret-authorized setup diagnostics. Never return tokens, headers or stacks.
+   if(process.env.CHAT_DIAGNOSTIC_TOKEN&&req.headers.get('x-axic-diagnostic')===process.env.CHAT_DIAGNOSTIC_TOKEN&&Date.now()<Number(process.env.CHAT_DIAGNOSTICS_UNTIL)){
+    const details=(e:unknown)=>e&&typeof e==='object'?{name:'name' in e?e.name:undefined,statusCode:'statusCode' in e?e.statusCode:undefined,message:'message' in e?String(e.message).slice(0,1000).replace(/(?:Bearer\s+[^\s]+|eyJ[A-Za-z0-9_.-]+|(?:sb_secret_|vck_)[A-Za-z0-9_-]+)/g,'[redacted]'):undefined}:{};
+    return JSON.stringify({error:details(error),cause:details(error&&typeof error==='object'&&'cause' in error?error.cause:undefined)});
+   }
+   return 'The assistant could not finish this response. Please try again or use the forms below.';},headers:{'Cache-Control':'no-store'}});
  }catch{return unavailable();}
 }
