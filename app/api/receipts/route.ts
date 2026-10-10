@@ -1,11 +1,11 @@
 import {workflow} from '@/lib/workflow-server';
-import {getOperator,requireOperator} from '@/lib/auth-server';
+import {getOperator,requireAdmin} from '@/lib/auth-server';
 import {consignments} from '@/lib/consignment-server';
 import {parseGoodCode,receiptLocation} from '@/lib/consignment';
 import {StorageError} from '@/lib/supabase-server';
 export const dynamic='force-dynamic';
 export async function POST(req:Request){
- const denied=await requireOperator(req);if(denied)return denied;
+ const denied=await requireAdmin(req);if(denied)return denied;
  let id:string,location:string;
  try{const body=await req.json();id=parseGoodCode(body.code);location=receiptLocation(body.location).location}catch(e){return Response.json({error:e instanceof Error?e.message:'Enter an item code and receiving location.'},{status:400})}
  const user=await getOperator();if(!user)return Response.json({error:'Sign in to confirm receipt.'},{status:401});

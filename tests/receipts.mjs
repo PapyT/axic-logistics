@@ -3,7 +3,7 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import assert from 'node:assert/strict';
 import {receiptLocation} from '../lib/consignment.ts';
 const compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-writeFileSync('work/receipts.mjs',compile(readFileSync('app/api/receipts/route.ts','utf8').replace("'@/lib/workflow-server'","'./legacy-workflow.mjs'").replace("'@/lib/auth-server'","'./workflow-auth.mjs'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/supabase-server'","'../lib/supabase-server.ts'")));
+writeFileSync('work/receipts.mjs',compile(readFileSync('app/api/receipts/route.ts','utf8').replace("'@/lib/workflow-server'","'./legacy-workflow.mjs'").replace("'@/lib/operator-scope'","'./operator-scope.mjs'").replace("'@/lib/auth-server'","'./workflow-auth.mjs'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/supabase-server'","'../lib/supabase-server.ts'")));
 const api=await import('../work/receipts.mjs'),{consignments}=await import('../work/consignment-server.mjs');
 const id='ca5e0003-0000-4000-8000-000000000005',actor='ca5e0003-0000-4000-8000-000000000001';
 assert.deepEqual(receiptLocation('  Abuja   warehouse '),{location:'Abuja warehouse',key:'abuja warehouse'});assert.throws(()=>receiptLocation(''));assert.throws(()=>receiptLocation('x'.repeat(121)));

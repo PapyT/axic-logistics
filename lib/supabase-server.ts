@@ -2,7 +2,7 @@
 export type ShipmentRow={id:string;payload:import('./freight').Shipment;version:number};
 export type Ticket={id:string;subject:string;message:string;status:string;created:string};
 export class StorageError extends Error {readonly status:number;constructor(status:number){super('Database request failed.');this.status=status}}
-export async function supabaseRequest<T>(table:'axic_shipments'|'axic_tickets'|'axic_consignments'|'axic_goods'|'rpc/axic_create_consignment'|'axic_receipts'|'rpc/axic_receive_good'|'rpc/axic_assign_good'|'axic_workflows'|'axic_workflow_scans'|'axic_workflow_alerts'|'axic_workflow_reads'|'rpc/axic_workflow_action',query:Record<string,string>={},method='GET',body?:unknown):Promise<T>{
+export async function supabaseRequest<T>(table:'axic_shipments'|'axic_tickets'|'axic_consignments'|'axic_goods'|'rpc/axic_create_consignment'|'axic_receipts'|'rpc/axic_receive_good'|'rpc/axic_assign_good'|'axic_workflows'|'axic_workflow_scans'|'axic_workflow_alerts'|'axic_workflow_reads'|'rpc/axic_workflow_action'|'axic_quote_requests'|'rpc/axic_quote_request_status',query:Record<string,string>={},method='GET',body?:unknown):Promise<T>{
   if(typeof window!=='undefined')throw new Error('Server-only database access.');
   const url=process.env.SUPABASE_URL;
   const key=process.env.SUPABASE_SECRET_KEY;

@@ -115,3 +115,11 @@ model WorkflowRead {
   @@id([alertId,actor])
   @@map("axic_workflow_reads")
 }
+
+model QuoteRequest {
+  id String @id @db.Text
+  payload Json @db.JsonB
+  created DateTime @default(now()) @db.Timestamptz(6)
+  @@index([created(sort: Desc)], map: "axic_quote_requests_created_idx")
+  @@map("axic_quote_requests")
+}

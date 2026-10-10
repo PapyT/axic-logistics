@@ -2,7 +2,7 @@ import ts from 'typescript';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import assert from 'node:assert/strict';
 mkdirSync('work',{recursive:true});
-writeFileSync('work/workflow-auth.mjs',"export async function requireOperator(){return null};export async function getOperator(){return {id:'ca5e0003-0000-4000-8000-000000000001',email:'receiver@test.local'}}");
+writeFileSync('work/workflow-auth.mjs',"export async function requireAdmin(){return null};export async function requireOperator(){return null};export async function getOperator(){return {axicRole:'admin',axicState:'',id:'ca5e0003-0000-4000-8000-000000000001',email:'receiver@test.local'}}");
 writeFileSync('work/freight.mjs',ts.transpileModule(readFileSync('lib/freight.ts','utf8').replace("'./pricing'","'../lib/pricing.ts'"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);
 const compile=(s)=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 writeFileSync('work/prisma-storage.mjs',compile(readFileSync('lib/prisma-storage.ts','utf8').replace("'./supabase-server'","'../lib/supabase-server.ts'")));
@@ -16,7 +16,7 @@ const model=(rows)=>({
 });
 globalThis.axicTestStorage=createPrismaStorage({shipment:model(shipments),supportTicket:model(tickets)});
 writeFileSync('work/prisma-facade.mjs',"export const storage=globalThis.axicTestStorage;export {StorageError} from '../lib/supabase-server.ts';");
-for(const name of ['shipments','support'])writeFileSync(`work/prisma-${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/storage-server'","'./prisma-facade.mjs'").replace("'@/lib/freight'","'./freight.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/workflow-server'","'./legacy-workflow.mjs'").replace("'@/lib/auth-server'","'./workflow-auth.mjs'")));
+for(const name of ['shipments','support'])writeFileSync(`work/prisma-${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/storage-server'","'./prisma-facade.mjs'").replace("'@/lib/freight'","'./freight.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/workflow-server'","'./legacy-workflow.mjs'").replace("'@/lib/operator-scope'","'./operator-scope.mjs'").replace("'@/lib/auth-server'","'./workflow-auth.mjs'")));
 const api=await import('../work/prisma-shipments.mjs'),support=await import('../work/prisma-support.mjs');
 const req=(method,body,id='')=>new Request('https://test.local/api/shipments'+(id?'?id='+id:''),{method,...(body?{body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}:{})});
 const data={origin:'Lagos',destination:'Abuja',service:'Road freight',weight:25,length:40,width:30,height:30,insurance:true,customer:'Prisma Demo'};

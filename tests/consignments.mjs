@@ -4,7 +4,7 @@ import {createRequire} from 'node:module';
 import assert from 'node:assert/strict';
 import {contact,goodsInput,parseGoodCode} from '../lib/consignment.ts';
 const compile=s=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
-for(const name of ['consignments','goods'])writeFileSync(`work/${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/auth-server'","'./workflow-auth.mjs'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/supabase-server'","'../lib/supabase-server.ts'")));
+for(const name of ['consignments','goods'])writeFileSync(`work/${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/operator-scope'","'./operator-scope.mjs'").replace("'@/lib/auth-server'","'./workflow-auth.mjs'").replace("'@/lib/storage-server'","'./storage-server.mjs'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/supabase-server'","'../lib/supabase-server.ts'")));
 const shipment=await import('../work/shipments.mjs'),api=await import('../work/consignments.mjs'),items=await import('../work/goods.mjs');
 delete process.env.DATABASE_URL;process.env.SUPABASE_URL='https://consignment-test.supabase.co';process.env.SUPABASE_SECRET_KEY='sb_secret_TEST_ONLY';
 const rows=new Map(),goods=new Map(),shipments=new Map();let atomicCalls=0;const originalFetch=globalThis.fetch;
@@ -15,7 +15,7 @@ globalThis.fetch=async(url,options)=>{
  if(u.pathname.endsWith('axic_goods')){if(options.method==='POST'){goods.set(body.id,{...body,consignment_id:null,assigned_at:null,created:new Date().toISOString()});return Response.json([goods.get(body.id)])}return Response.json([...goods.values()].filter(g=>!u.searchParams.get('id')||g.id===u.searchParams.get('id').slice(3)));}
  if(u.pathname.endsWith('axic_receipts'))return Response.json([]);
  if(u.pathname.endsWith('axic_consignments'))return Response.json([...rows.values()]);
- if(u.pathname.endsWith('axic_shipments'))return Response.json([...shipments.values()].filter(s=>s.id===u.searchParams.get('id')?.slice(3)).map(payload=>({payload,id:payload.id,version:0})));
+ if(u.pathname.endsWith('axic_shipments'))return Response.json([...shipments.values()].filter(s=>!u.searchParams.get('id')||s.id===u.searchParams.get('id')?.slice(3)).map(payload=>({payload,id:payload.id,version:0})));
  throw Error('Unexpected request');
 };
 const req=(method,body,path='/api/shipments')=>new Request('https://test.local'+path,{method,...(body?{headers:{'Content-Type':'application/json',origin:'https://test.local'},body:JSON.stringify(body)}:{})});

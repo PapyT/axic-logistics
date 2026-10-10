@@ -1,7 +1,8 @@
 import {workflow} from '@/lib/workflow-server';
 import {contact,goodsInput,type GoodInput,type Contact} from '@/lib/consignment';
 import {consignments} from '@/lib/consignment-server';
-import {requireOperator} from '@/lib/auth-server';
+import {canAccessShipment} from '@/lib/operator-scope';
+import {getOperator,requireAdmin,requireOperator} from '@/lib/auth-server';
 import {storage,StorageError} from '@/lib/storage-server';
 import {quote,statuses,normaliseShipment,locationName,type QuoteInput,type Shipment} from '@/lib/freight';
 export const runtime='nodejs';
@@ -12,7 +13,7 @@ export async function GET(req:Request){
  try{
   const id=new URL(req.url).searchParams.get('id')?.trim().toUpperCase();
   if(id){if(id.length>40)return Response.json({error:'Invalid tracking ID.'},{status:400});const row=await storage.getShipment(id);const raw=retiredSampleIds.has(id)?undefined:row?.payload;const shipment=raw?normaliseShipment(raw):undefined;const publicShipment=shipment?{id:shipment.id,origin:shipment.origin,destination:shipment.destination,service:shipment.service,weight:shipment.weight,status:shipment.status,location:shipment.location,events:shipment.events}:undefined;return Response.json(publicShipment??{error:'Shipment not found. Check the tracking ID.'},{status:shipment?200:404,headers:{'Cache-Control':'no-store'}});}
-  const denied=await requireOperator();if(denied)return denied;const rows=await storage.listShipments();return Response.json(rows.filter(r=>!retiredSampleIds.has(r.id)).map(r=>normaliseShipment(r.payload)).sort((a,b)=>b.created.localeCompare(a.created)),{headers:{'Cache-Control':'no-store'}});
+  const denied=await requireOperator();if(denied)return denied;const user=await getOperator();if(!user)return Response.json({error:'Sign in to continue.'},{status:401});const rows=await storage.listShipments();return Response.json(rows.filter(r=>!retiredSampleIds.has(r.id)&&canAccessShipment(user,r.payload)).map(r=>normaliseShipment(r.payload)).sort((a,b)=>b.created.localeCompare(a.created)),{headers:{'Cache-Control':'no-store'}});
  }catch{return unavailable();}
 }
 export async function POST(req:Request){
@@ -22,7 +23,7 @@ export async function POST(req:Request){
  try{if(goods.length)await consignments.create(s,sender!,receiver!,goods);else await storage.createShipment(s);return Response.json(s,{status:201});}catch{return unavailable();}
 }
 export async function PATCH(req:Request){
- const denied=await requireOperator(req);if(denied)return denied;
+ const denied=await requireAdmin(req);if(denied)return denied;
  let body:Record<string,unknown>;
  try{body=await req.json() as typeof body;if(!body||!statuses.includes(String(body.status))||typeof body.id!=='string'||body.id.length>40||typeof body.location!=='string'||!body.location.trim()||body.location.length>120||typeof body.driver!=='string'||body.driver.length>80)throw new Error();}catch{return Response.json({error:'Provide a valid status, location and driver.'},{status:400});}
  try{
