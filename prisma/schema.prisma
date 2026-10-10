@@ -24,6 +24,7 @@ model SupportTicket {
 }
 
 model Consignment {
+  workflow Workflow?
   id String @id @db.Text
   shipmentId String @unique @map("shipment_id") @db.Text
   shipment Shipment @relation(fields:[shipmentId], references:[id])
@@ -35,6 +36,7 @@ model Consignment {
   @@map("axic_consignments")
 }
 model Good {
+  scans WorkflowScan[]
   receipts Receipt[]
   id String @id @db.Uuid
   description String @db.Text
@@ -59,4 +61,57 @@ model Receipt {
   @@unique([goodId,locationKey],map:"axic_receipts_good_id_location_key_key")
   @@index([receivedAt(sort:Desc)],map:"axic_receipts_received_idx")
   @@map("axic_receipts")
+}
+
+model Workflow {
+  consignmentId String @id @map("consignment_id") @db.Text
+  consignment Consignment @relation(fields:[consignmentId],references:[id])
+  origin String @db.Text
+  destination String @db.Text
+  stage String @default("Awaiting pickup") @db.Text
+  pickupOwner String? @map("pickup_owner") @db.Uuid
+  pickupName String? @map("pickup_name") @db.Text
+  destinationOwner String? @map("destination_owner") @db.Uuid
+  destinationName String? @map("destination_name") @db.Text
+  deliveryOwner String? @map("delivery_owner") @db.Uuid
+  deliveryName String? @map("delivery_name") @db.Text
+  updated DateTime @default(now()) @db.Timestamptz(6)
+  scans WorkflowScan[]
+  alerts WorkflowAlert[]
+  @@index([origin,stage],map:"axic_workflows_origin_idx")
+  @@index([destination,stage],map:"axic_workflows_destination_idx")
+  @@map("axic_workflows")
+}
+model WorkflowScan {
+  id String @id @db.Uuid
+  goodId String @map("good_id") @db.Uuid
+  good Good @relation(fields:[goodId],references:[id])
+  consignmentId String @map("consignment_id") @db.Text
+  workflow Workflow @relation(fields:[consignmentId],references:[consignmentId])
+  phase String @db.Text
+  actor String @db.Uuid
+  actorName String @map("actor_name") @db.Text
+  location String @db.Text
+  scannedAt DateTime @default(now()) @map("scanned_at") @db.Timestamptz(6)
+  @@unique([goodId,phase],map:"axic_workflow_scans_good_id_phase_key")
+  @@index([consignmentId,phase],map:"axic_workflow_scans_consignment_idx")
+  @@map("axic_workflow_scans")
+}
+model WorkflowAlert {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  consignmentId String @map("consignment_id") @db.Text
+  workflow Workflow @relation(fields:[consignmentId],references:[consignmentId])
+  state String @db.Text
+  kind String @db.Text
+  created DateTime @default(now()) @db.Timestamptz(6)
+  reads WorkflowRead[]
+  @@index([state,created(sort:Desc)],map:"axic_workflow_alerts_state_idx")
+  @@map("axic_workflow_alerts")
+}
+model WorkflowRead {
+  alertId String @map("alert_id") @db.Uuid
+  alert WorkflowAlert @relation(fields:[alertId],references:[id])
+  actor String @db.Uuid
+  @@id([alertId,actor])
+  @@map("axic_workflow_reads")
 }

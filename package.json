@@ -12,11 +12,12 @@
     "build": "prisma generate && next build --webpack",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/verify.mjs && node tests/prisma.mjs && node tests/auth.mjs && node tests/consignments.mjs && node tests/receipts.mjs",
+    "test": "node tests/verify.mjs && node tests/prisma.mjs && node tests/auth.mjs && node tests/consignments.mjs && node tests/receipts.mjs && node tests/workflow.mjs",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
     "db:validate": "prisma validate",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed:staff": "node scripts/seed-state-staff.mjs"
   },
   "dependencies": {
     "@prisma/adapter-pg": "7.9.0",

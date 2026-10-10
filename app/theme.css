@@ -65,3 +65,8 @@
  .avatar{background:#304532;color:#e1eecd}
 }
 @media print{.item-label,.item-label *{color:#152a24!important}.item-label{background:white!important}.item-label .micro{color:#45574d!important}}
+
+/* State pickup and handover workspace */
+.handover-columns{display:grid;grid-template-columns:minmax(280px,.8fr) minmax(0,1.3fr);gap:24px;margin:24px 0}.handover-job{padding:22px 0;border-bottom:1px solid var(--border)}.handover-job.selected{border-left:3px solid #83b937;padding-left:16px}.handover-job h3{font-size:19px;margin:12px 0}.handover-job p{color:var(--muted);margin:12px 0;overflow-wrap:anywhere}.handover-alerts article{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:18px 0;border-bottom:1px solid var(--border)}.handover-alerts p{font-size:12px;color:var(--muted)}.handover-items{list-style:none;padding:0;display:grid;gap:12px;margin:20px 0}.handover-items li{display:flex;align-items:center;gap:10px}.scan-confirmation{padding:20px;border:1px solid var(--border);border-radius:8px;margin:20px 0}.scan-confirmation p{overflow-wrap:anywhere;margin:12px 0}.handover-workspace .qr-print-area{max-height:400px;overflow:auto}.handover-workspace .party-grid{overflow-wrap:anywhere}.sidebar nav{overflow-y:auto;min-height:0;flex-shrink:1}.sidebar-bottom{flex-shrink:0}.sidebar .demo-note{margin-top:14px}.sidebar .user-profile{padding-top:14px}.item-scanner form{display:grid;gap:16px}
+@media(max-width:900px){.handover-columns{grid-template-columns:1fr}.handover-alerts article{align-items:flex-start;flex-direction:column}}
+@media print{.handover-workspace .qr-print-area{max-height:none;overflow:visible}}

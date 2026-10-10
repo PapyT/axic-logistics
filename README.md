@@ -93,11 +93,11 @@ These are illustrative zone bands, not live carrier prices. Domestic state pairs
 
 In Operations → New shipment, choose **Consignment**. Enter sender and receiver names, phone numbers, addresses, optional emails, and one row per physical good with its weight. The booking uses the sum of goods weights. Shipment, consignment and goods are created together atomically. Each good receives a random UUID and its own QR label.
 
-Open **Consignments & QR**, select a consignment and print the item labels. The QR contains only an opaque item identifier in an HTTPS `/operations/scan?code=…` link. Contacts are never encoded in QR labels or returned in public tracking. Scanning requires staff login and preserves the item link through login. Use **Scan QR with camera** on HTTPS, grant camera permission, or paste the item ID/link. Select the consignment and assign. Repeating the same assignment is safe; an item already assigned elsewhere is rejected. There is no item transfer or removal workflow yet.
+Open **Goods & receiving**, select a consignment and print the item labels. The QR contains only an opaque item identifier in an HTTPS `/operations/scan?code=…` link. Contacts are never encoded in QR labels or returned in public tracking. Scanning requires staff login and preserves the item link through login. Use **Scan QR with camera** on HTTPS, grant camera permission, or paste the item ID/link. Select the consignment and assign. Repeating the same assignment is safe; an item already assigned elsewhere is rejected. There is no item transfer or removal workflow yet.
 
 Goods can be registered individually before assignment. Adding such goods updates the consignment item list and registered weight, but does not automatically recalculate the original shipment weight or quote. Review weight and carrier price before dispatch. Estimates are not invoices or payments.
 
-Bootstrap the first admin with `OPERATIONS_ADMIN_EMAILS`, privately in Vercel, and redeploy. An admin then sees **Team accounts** to create confirmed admin/staff accounts and change roles or suspend access. `SUPABASE_SECRET_KEY` is required for these Auth Admin operations even when Prisma handles storage. Accounts have trusted server-managed app metadata; there is no public signup or emailed invitation. Existing accounts are not promoted automatically. Your own access and bootstrap admin access cannot be edited in this screen. Password reset is managed in Supabase using your configured recovery process.
+Bootstrap the first admin with `OPERATIONS_ADMIN_EMAILS`, privately in Vercel, and redeploy. An admin then sees **Team accounts** to create confirmed admin/staff accounts and change roles or suspend access. `SUPABASE_SECRET_KEY` is required for these Auth Admin operations even when Prisma handles storage. Accounts have trusted server-managed app metadata; there is no public signup or emailed invitation. Existing accounts are not promoted automatically. Your own access and bootstrap admin access cannot be edited in this screen. Admins can edit account names and set new passwords in Team accounts. Work states and roles are trusted app metadata. These controls never return passwords.
 
 Validation includes generated QR PNG decoding with ZXing, mocked REST registration/lookup/assignment, auth role guards, and a rolled-back live Postgres transaction checking unique IDs, assignment conflicts and creation rollback. Test records are not retained. Physical camera scanning still needs device testing.
 
@@ -116,3 +116,30 @@ Validation: rolled-back live SQL checks cover partial/completed receipts, same-l
 ## Automatic dark mode
 
 `app/theme.css` follows `prefers-color-scheme: dark`. CSS applies the correct palette before first paint and responds to system theme changes without reload, local storage or a hydration script. The customer site, login, operations screens, forms, tables and dialogs share the theme. Brand lime and freight photography are retained. QR images and printed labels stay white with dark codes for scan contrast. There is no manual theme override.
+
+
+## State pickups and handovers
+
+New domestic bookings (single good or consignment) create item QR codes, a workflow and an origin-state notification in one database transaction. Existing bookings and international jobs retain their legacy dispatch/receiving flow. The public calculator supports both single goods and consignments, with sender and receiver contacts.
+
+Open **Pickup & handovers**. Staff see jobs for their configured origin/destination state; admins can see the whole network. Notifications are private, per account, refresh every 10 seconds while the workspace is open, and have a mark-read action. No email, SMS or background push notifications are sent.
+
+| Step | Responsible staff | Required action | Public status |
+| --- | --- | --- | --- |
+| Booking | Origin-state staff notified | One staff claims “I’m on my way to collect” before travelling | Booked |
+| Sender collection | Pickup owner | Attach one QR label per physical good and confirm each collected item | Collected after all scans |
+| Dispatch | Pickup owner | Dispatch to destination state; destination staff notified | In transit |
+| Destination handover | One destination-state staff | Claim receipt, then confirm each item received | At hub after all scans |
+| Final delivery | Staff who received the goods | Start delivery, then confirm handover to receiver | Out for delivery → Delivered |
+
+Camera scanning and manual entry use the same explicit confirmation. Server-verified actor ID and trusted work-state metadata determine permission; browser-supplied assignments cannot override them. Row locks make competing claims atomic. Duplicate claims/scans are safe, partial scans cannot advance a job, and the item set freezes when pickup is claimed. Generic status edits and legacy receipt controls cannot bypass a managed workflow. The current flow retains the receiving staff member through final delivery; it does not include reassignment, cancellation or claim release.
+
+Apply `supabase/state-workflow.sql`, then `supabase/workflow-assignment.sql` once, additively, on a new environment. They have already been applied to the existing shared project. Prisma and REST call the same transactional function. RLS and denied browser grants keep workflows, scans and notifications private. The backend tests include a rolled-back real Postgres lifecycle in `tests/workflow-db.sql`.
+
+## Seeded state staff and later edits
+
+37 confirmed staff accounts were created: one per Nigerian state plus Abuja. Testing emails follow `staff.<state-with-hyphens>@example.com`, e.g. `staff.akwa-ibom@example.com`. Names start as `AXIC <State> Staff`. Each has a different generated password, stored only in the private credential file delivered to the owner. These are real Auth accounts using reserved testing addresses; no messages are sent. Replace testing accounts with individual staff accounts before real team use.
+
+Admins use **Team accounts → Edit name / password** to change names or set a password of 12–128 characters. Leave the new-password field blank to preserve the current password. State, role and suspension controls remain available. Passwords are never included in account-list responses. The first administrator still uses the private `OPERATIONS_ADMIN_EMAILS` bootstrap setting.
+
+For a new environment, set the Supabase URL and secret key privately and run `pnpm db:seed:staff`. This server-only script creates missing accounts, skips matching existing accounts, never overwrites existing passwords, and records only newly created credentials in ignored `work/state-staff-credentials.csv`. Rerunning after partial success is safe. Never commit or publish that file.
