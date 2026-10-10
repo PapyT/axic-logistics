@@ -9,7 +9,8 @@ export const maxDuration=60;
 const unavailable=()=>Response.json({error:'The assistant is temporarily unavailable. You can still use the calculator, tracking and support forms.'},{status:503});
 export async function POST(req:Request){
  if(req.headers.get('origin')!==new URL(req.url).origin)return Response.json({error:'Open the assistant on the AXIC website.'},{status:403});
- if(process.env.AXIC_CHAT_ENABLED!=='true'||!process.env.CHAT_RATE_LIMIT_SALT||(!process.env.VERCEL_OIDC_TOKEN&&!process.env.AI_GATEWAY_API_KEY))return unavailable();
+ // Vercel runtime OIDC is supplied through SDK request context, not necessarily an env var.
+ if(process.env.AXIC_CHAT_ENABLED!=='true'||!process.env.CHAT_RATE_LIMIT_SALT||(!process.env.VERCEL&&!process.env.VERCEL_OIDC_TOKEN&&!process.env.AI_GATEWAY_API_KEY))return unavailable();
  let messages;
  try{const body=await req.text();if(body.length>64000)throw Error('Conversation is too long. Start a new conversation.');messages=chatMessages(JSON.parse(body));}
  catch(e){return Response.json({error:e instanceof SyntaxError?'Invalid conversation.':e instanceof Error?e.message:'Invalid conversation.'},{status:400});}
