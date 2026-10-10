@@ -10,7 +10,8 @@ writeFileSync('work/auth-server.mjs',compile(readFileSync('lib/auth-server.ts','
 for(const name of ['login','logout'])writeFileSync(`work/auth-${name}.mjs`,compile(readFileSync(`app/api/auth/${name}/route.ts`,'utf8').replace("'@/lib/auth-server'","'./auth-server.mjs'").replace("'@/lib/auth-policy'","'../lib/auth-policy.ts'").replace("'next/headers'","'./headers.mjs'")));
 for(const name of ['shipments','support'])writeFileSync(`work/protected-${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/auth-server'","'./auth-server.mjs'").replace("'@/lib/storage-server'","'./storage-server.mjs'").replace("'@/lib/freight'","'./freight.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'")));
 writeFileSync('work/auth-admin.mjs',compile(readFileSync('lib/auth-admin-server.ts','utf8')));
-for(const name of ['consignments','goods','team'])writeFileSync(`work/protected-${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/auth-server'","'./auth-server.mjs'").replace("'@/lib/auth-admin-server'","'./auth-admin.mjs'").replace("'@/lib/auth-policy'","'../lib/auth-policy.ts'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/supabase-server'","'../lib/supabase-server.ts'")));
+for(const name of ['consignments','goods','team','receipts'])writeFileSync(`work/protected-${name}.mjs`,compile(readFileSync(`app/api/${name}/route.ts`,'utf8').replace("'@/lib/auth-server'","'./auth-server.mjs'").replace("'@/lib/auth-admin-server'","'./auth-admin.mjs'").replace("'@/lib/auth-policy'","'../lib/auth-policy.ts'").replace("'@/lib/consignment-server'","'./consignment-server.mjs'").replace("'@/lib/consignment'","'../lib/consignment.ts'").replace("'@/lib/supabase-server'","'../lib/supabase-server.ts'")));
+const receipts=await import('../work/protected-receipts.mjs');
 const team=await import('../work/protected-team.mjs'),goods=await import('../work/protected-goods.mjs'),consignments=await import('../work/protected-consignments.mjs');
 const login=await import('../work/auth-login.mjs'),logout=await import('../work/auth-logout.mjs'),auth=await import('../work/auth-server.mjs');
 const shipments=await import('../work/protected-shipments.mjs'),support=await import('../work/protected-support.mjs');
@@ -41,7 +42,7 @@ globalThis.fetch=async(url,options)=>{
 };
 let r=await shipments.GET(new Request('https://test.local/api/shipments'));assert.equal(r.status,401);
 r=await support.GET();assert.equal(r.status,401);
-assert.equal((await team.GET()).status,401);assert.equal((await consignments.GET()).status,401);assert.equal((await goods.GET(new Request('https://test.local/api/goods?code=x'))).status,401);
+assert.equal((await receipts.POST(request('/api/receipts',{}))).status,401);assert.equal((await receipts.POST(request('/api/receipts',{},'https://evil.test'))).status,403);assert.equal((await team.GET()).status,401);assert.equal((await consignments.GET()).status,401);assert.equal((await goods.GET(new Request('https://test.local/api/goods?code=x'))).status,401);
 assert.equal((await goods.POST(request('/api/goods',{}))).status,401);
 r=await shipments.PATCH(new Request('https://test.local/api/shipments',{method:'PATCH',headers:{origin:'https://test.local'},body:'{}'}));assert.equal(r.status,401);
 r=await support.PATCH(new Request('https://test.local/api/support',{method:'PATCH',headers:{origin:'https://evil.test'},body:'{}'}));assert.equal(r.status,403);

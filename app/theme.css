@@ -1,0 +1,67 @@
+/* CSS media queries apply before first paint and follow live OS changes. */
+:root{color-scheme:light}
+.receipt-mode-tabs,.button-row{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 24px}
+.receipt-mode-tabs .btn{white-space:normal;font-size:12px;padding:12px 16px}
+.receipt-progress{padding:20px;background:#eef3e8;border:1px solid var(--border);border-radius:10px;margin:20px 0}
+.receipt-progress strong{display:block;margin:18px 0 12px}
+.receipt-progress progress{width:100%;height:12px;accent-color:#6d9439}
+.receipt-progress ul{list-style:none;padding:0;display:grid;gap:12px;margin-top:18px}
+.receipt-progress li{display:flex;gap:12px;align-items:center}
+.receipt-audit{padding-top:20px;margin-top:20px;border-top:1px solid var(--border)}
+.receipt-audit h3{font-size:18px;margin-bottom:12px}
+.receipt-audit article{padding:12px 0;border-bottom:1px solid var(--border)}
+.receipt-audit p{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.item-label img{background:#fff}
+@media screen and (prefers-color-scheme:dark){
+ :root{color-scheme:dark;--ink:#e6eee9;--deep:#0d2023;--muted:#a6b9af;--paper:#0a191b;--border:#304740;--white:#14292b}
+ body{background:var(--paper);color:var(--ink)}
+ header{background:#0a191bf2}
+ .topbar{background:#0d2023}
+ .btn.dark{background:var(--lime);color:#102627}
+ .btn.outline,.tools-card,.service-card,.ops-preview,.sidebar,.metric-card,.workspace-card,.dispatch-card{background:#14292b;color:var(--ink);border-color:var(--border)}
+ .badge{background:#283f2a;color:#d2edab}
+ .badge.exception{background:#483025;color:#f3c298}
+ .badge.delivered{background:#193e33;color:#a2e6c4}
+ .error{background:#442722;color:#ffc4b9}
+ .success{background:#203b2a;color:#c5e8b4}
+ .skip-link,.support-fab,.coverage-tabs button.active{color:#102627}
+ .circle-button:hover{color:#102627}
+ .floating-card,.hero-photography .floating-card{background:#18302eeF;color:var(--ink);border-color:var(--border)}
+ .floating-card .micro,.floating-card>div>span:last-child{color:#b6cabe}
+ .truck-icon{background:#2a443b}
+ .track-input,.tracking-result,.quote-form input:not([type=checkbox]),.quote-form select,.modal input,.modal select,.modal textarea,.tracking-workspace select,.search-box,.filter-label select,.login-form-wrap input,.consignment-panel input,.consignment-panel select{background:#102124;color:var(--ink);border-color:var(--border)}
+ input::placeholder,textarea::placeholder{color:#8fa79c;opacity:1}
+ .quote-total,.service-extra,.ops-showcase,.party-grid section,.receipt-progress{background:#1a302b;border-color:var(--border)}
+ .price-breakdown,.contact-fields,.step-number,.team-account,.modal,.login-security,.workspace-signout{border-color:var(--border)}
+ .service-art{background:#223a31;color:#bad2af}
+ .air .service-art{background:#20343e;color:#aecbd8}
+ .ocean .service-art{background:#203a38;color:#b0cebd}
+ .art-line{background:#4b6955}
+ .art-line:after{background:#b8d49c}
+ .cta{color:#102627}
+ .cta .btn.dark{background:#102627;color:white}
+ .cta .eyebrow,.cta h2{color:#102627}
+ .modal{background:var(--paper)}
+ .workspace{background:#0a191b}
+ .workspace-top{background:#14292bee}
+ .sidebar nav>button{color:#b2c4b8}
+ .sidebar nav>button.active,.nav-count,.demo-note,.workspace-demo-banner,.login-lock,.workspace-signout{background:#263b2b;color:#d9ebcb;border-color:var(--border)}
+ .metric-card>span,th{color:#b2c4b8}
+ .metric-card>span svg,.operations-feature-list svg,.ops-story-copy li>svg{color:#b5ce91}
+ .network-card{background:#0d2023;color:#e9efe5}
+ .flow-row>i,.shipment-progress>span{background:#30483b}
+ th,.ticket{background:#102124;border-color:var(--border)}
+ td{border-color:var(--border)}
+ tbody tr:hover{background:#1c3432}
+ .table-id{color:#cfeba7;text-decoration-color:#6e8b54}
+ .dispatch-column{background:#142b27;border-color:var(--border)}
+ .dispatch-column>h3>span{background:#2b4536}
+ .dispatch-card footer{background:none}
+ .login-form-wrap>p,.login-access-note,.password-field button,.login-footer,.login-security,.workspace-foot,.timeline small,.empty-column{color:var(--muted)}
+ .item-label{background:#14292b;color:var(--ink);border-color:var(--border)}
+ .timeline li:not(:last-child):before{background:var(--border)}
+ .timeline li:first-child>span{background:var(--lime);box-shadow:0 0 0 4px #304328}
+ .checkbox input{accent-color:var(--lime)}
+ .avatar{background:#304532;color:#e1eecd}
+}
+@media print{.item-label,.item-label *{color:#152a24!important}.item-label{background:white!important}.item-label .micro{color:#45574d!important}}

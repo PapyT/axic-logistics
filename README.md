@@ -100,3 +100,19 @@ Goods can be registered individually before assignment. Adding such goods update
 Bootstrap the first admin with `OPERATIONS_ADMIN_EMAILS`, privately in Vercel, and redeploy. An admin then sees **Team accounts** to create confirmed admin/staff accounts and change roles or suspend access. `SUPABASE_SECRET_KEY` is required for these Auth Admin operations even when Prisma handles storage. Accounts have trusted server-managed app metadata; there is no public signup or emailed invitation. Existing accounts are not promoted automatically. Your own access and bootstrap admin access cannot be edited in this screen. Password reset is managed in Supabase using your configured recovery process.
 
 Validation includes generated QR PNG decoding with ZXing, mocked REST registration/lookup/assignment, auth role guards, and a rolled-back live Postgres transaction checking unique IDs, assignment conflicts and creation rollback. Test records are not retained. Physical camera scanning still needs device testing.
+
+## Receiving goods
+
+Open Operations → **Goods & receiving** → **Receive goods**. Enter the receiving branch/warehouse, scan the QR label or click **Enter code manually** and type the printed item UUID (or paste the QR link). Look up the item, check its details and press **Confirm physical receipt**. Camera access is optional; a scan alone never confirms arrival.
+
+Each receipt stores the item ID, normalized location, provider-verified operator ID/email, and server timestamp. Client-supplied actor names or IDs are ignored. The private receipt history appears with the item. Repeated confirmations at the same location return the original receipt, without increasing counts or adding milestones. Case and repeated whitespace do not create different warehouses; staff should use a consistent branch name.
+
+The consignment shows received/expected counts and outstanding items for the chosen location. Partial arrivals preserve the existing shipment status. Once all assigned goods are received at that location, a single milestone is added and the shipment becomes **At hub**. Existing **Exception** status is retained for staff resolution. New receipts are rejected for **Out for delivery** or **Delivered** shipments. Another hub can record its own arrivals during a subsequent transit leg.
+
+Once receiving begins, the assigned item set is frozen. Register late goods in another consignment. This keeps completion counts reliable. Receipts and assignment use the same database shipment row lock; dispatch's existing version checks also detect receipt updates. `supabase/receipts.sql` has been applied additively to the shared project; do not rerun it. Both Prisma and REST call the same SQL functions, using bound parameters, and all receipt data is server-only with RLS and denied browser-role grants.
+
+Validation: rolled-back live SQL checks cover partial/completed receipts, same-location duplicates, another hub, frozen item counts, unassigned items, delivered-state protection and private grants. API tests cover manual/QR equivalence, provider-derived staff identity, both storage adapters and sanitized failures. Physical camera and live authenticated browser checks still require device/session testing.
+
+## Automatic dark mode
+
+`app/theme.css` follows `prefers-color-scheme: dark`. CSS applies the correct palette before first paint and responds to system theme changes without reload, local storage or a hydration script. The customer site, login, operations screens, forms, tables and dialogs share the theme. Brand lime and freight photography are retained. QR images and printed labels stay white with dark codes for scan contrast. There is no manual theme override.

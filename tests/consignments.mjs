@@ -13,6 +13,7 @@ globalThis.fetch=async(url,options)=>{
  if(u.pathname.endsWith('axic_create_consignment')){atomicCalls++;const {p_shipment:s,p_sender:sender,p_receiver:receiver,p_goods:g}=body;shipments.set(s.id,s);rows.set(s.id,{id:s.id,shipment_id:s.id,sender,receiver,created:new Date().toISOString()});for(const item of g)goods.set(item.id,{...item,consignment_id:s.id,created:new Date().toISOString(),assigned_at:new Date().toISOString()});return Response.json(s);}
  if(u.pathname.endsWith('axic_assign_good')){const g=goods.get(body.p_good);if(!g||!rows.has(body.p_consignment))return Response.json({},{status:404});if(g.consignment_id&&g.consignment_id!==body.p_consignment)return Response.json({},{status:409});g.consignment_id=body.p_consignment;g.assigned_at??=new Date().toISOString();return Response.json(g);}
  if(u.pathname.endsWith('axic_goods')){if(options.method==='POST'){goods.set(body.id,{...body,consignment_id:null,assigned_at:null,created:new Date().toISOString()});return Response.json([goods.get(body.id)])}return Response.json([...goods.values()].filter(g=>!u.searchParams.get('id')||g.id===u.searchParams.get('id').slice(3)));}
+ if(u.pathname.endsWith('axic_receipts'))return Response.json([]);
  if(u.pathname.endsWith('axic_consignments'))return Response.json([...rows.values()]);
  if(u.pathname.endsWith('axic_shipments'))return Response.json([...shipments.values()].filter(s=>s.id===u.searchParams.get('id')?.slice(3)).map(payload=>({payload,id:payload.id,version:0})));
  throw Error('Unexpected request');

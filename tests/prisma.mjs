@@ -2,7 +2,7 @@ import ts from 'typescript';
 import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
 import assert from 'node:assert/strict';
 mkdirSync('work',{recursive:true});
-writeFileSync('work/workflow-auth.mjs',"export async function requireOperator(){return null}");
+writeFileSync('work/workflow-auth.mjs',"export async function requireOperator(){return null};export async function getOperator(){return {id:'ca5e0003-0000-4000-8000-000000000001',email:'receiver@test.local'}}");
 writeFileSync('work/freight.mjs',ts.transpileModule(readFileSync('lib/freight.ts','utf8').replace("'./pricing'","'../lib/pricing.ts'"),{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText);
 const compile=(s)=>ts.transpileModule(s,{compilerOptions:{module:ts.ModuleKind.ESNext,target:ts.ScriptTarget.ES2022}}).outputText;
 writeFileSync('work/prisma-storage.mjs',compile(readFileSync('lib/prisma-storage.ts','utf8').replace("'./supabase-server'","'../lib/supabase-server.ts'")));

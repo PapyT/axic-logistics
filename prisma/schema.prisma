@@ -35,6 +35,7 @@ model Consignment {
   @@map("axic_consignments")
 }
 model Good {
+  receipts Receipt[]
   id String @id @db.Uuid
   description String @db.Text
   weight Float
@@ -44,4 +45,18 @@ model Good {
   assignedAt DateTime? @map("assigned_at") @db.Timestamptz(6)
   @@index([consignmentId],map:"axic_goods_consignment_idx")
   @@map("axic_goods")
+}
+
+model Receipt {
+  id String @id @db.Uuid
+  goodId String @map("good_id") @db.Uuid
+  good Good @relation(fields:[goodId],references:[id])
+  location String @db.Text
+  locationKey String @map("location_key") @db.Text
+  receivedBy String @map("received_by") @db.Uuid
+  receivedByName String @map("received_by_name") @db.Text
+  receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz(6)
+  @@unique([goodId,locationKey],map:"axic_receipts_good_id_location_key_key")
+  @@index([receivedAt(sort:Desc)],map:"axic_receipts_received_idx")
+  @@map("axic_receipts")
 }

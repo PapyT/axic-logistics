@@ -1,6 +1,8 @@
 export type Contact={name:string;phone:string;address:string;email?:string};
 export type GoodInput={description:string;weight:number};
-export type Good={id:string;description:string;weight:number;consignment_id:string|null;created:string;assigned_at:string|null};
+export type Receipt={id:string;good_id:string;location:string;location_key:string;received_by:string;received_by_name:string;received_at:string};
+export type ReceiptResult={item:Good;receipt:Receipt;received:number;expected:number;alreadyReceived:boolean;shipmentStatus:string};
+export type Good={id:string;description:string;weight:number;consignment_id:string|null;created:string;assigned_at:string|null;receipts?:Receipt[]};
 export type Consignment={id:string;shipment_id:string;sender:Contact;receiver:Contact;created:string;goods:Good[]};
 export function contact(value:unknown):Contact{
  const c=value as Record<string,unknown>;
@@ -20,3 +22,5 @@ export function parseGoodCode(value:string){
  else if(/^https?:\/\//i.test(id)){const url=new URL(id);if(url.pathname!=='/operations/scan')throw Error('This QR code is not an AXIC item label.');id=url.searchParams.get('code')??'';}
  if(!uuid.test(id))throw Error('Enter or scan a valid AXIC item QR code.');return id.toLowerCase();
 }
+
+export function receiptLocation(value:unknown){if(typeof value!=='string')throw Error('Enter the receiving branch or warehouse.');const location=value.trim().replace(/\s+/g,' ');if(!location||location.length>120)throw Error('Enter a receiving location of up to 120 characters.');return {location,key:location.toLowerCase()};}

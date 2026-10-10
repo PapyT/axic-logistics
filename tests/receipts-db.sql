@@ -1,0 +1,33 @@
+begin;
+do $$
+declare a uuid:='ca5e0003-0000-4000-8000-000000000001'; b uuid:='ca5e0003-0000-4000-8000-000000000002'; actor uuid:='ca5e0003-0000-4000-8000-000000000003'; result jsonb; first_receipt jsonb; s jsonb;
+begin
+ perform public.axic_create_consignment('{"id":"AX-RCPTTEST","status":"Booked","location":"Lagos","events":[]}','{}','{}',jsonb_build_array(jsonb_build_object('id',a,'description','QA one','weight',1),jsonb_build_object('id',b,'description','QA two','weight',2)));
+ result:=public.axic_receive_good(a,'Abuja warehouse',actor,'QA operator',pg_catalog.gen_random_uuid());
+ if (result->>'received')::int<>1 or (result->>'expected')::int<>2 or result->>'shipmentStatus'<>'Booked' then raise exception 'Partial receipt failed';end if;
+ first_receipt:=result->'receipt';
+ result:=public.axic_receive_good(a,'  ABUJA   warehouse  ',actor,'Other operator',pg_catalog.gen_random_uuid());
+ if not (result->>'alreadyReceived')::boolean or result->'receipt'<>first_receipt or (result->>'received')::int<>1 then raise exception 'Duplicate guard failed';end if;
+ result:=public.axic_receive_good(b,'Abuja warehouse',actor,'QA operator',pg_catalog.gen_random_uuid());
+ if result->>'shipmentStatus'<>'At hub' or (result->>'received')::int<>2 then raise exception 'Completion failed';end if;
+ select payload into s from public.axic_shipments where id='AX-RCPTTEST';
+ if jsonb_array_length(s->'events')<>1 or s->>'location'<>'Abuja warehouse' then raise exception 'Milestone failed';end if;
+ perform public.axic_receive_good(b,'Abuja warehouse',actor,'QA operator',pg_catalog.gen_random_uuid());
+ select payload into s from public.axic_shipments where id='AX-RCPTTEST';
+ if jsonb_array_length(s->'events')<>1 then raise exception 'Duplicate event';end if;
+ insert into public.axic_goods(id,description,weight) values('ca5e0003-0000-4000-8000-000000000004','QA loose',1);
+ begin perform public.axic_assign_good('ca5e0003-0000-4000-8000-000000000004','AX-RCPTTEST');raise exception 'Expected item set changed';exception when unique_violation then null;end;
+ begin perform public.axic_receive_good('ca5e0003-0000-4000-8000-000000000004','Abuja warehouse',actor,'QA operator',pg_catalog.gen_random_uuid());raise exception 'Unassigned received';exception when unique_violation then null;end;
+ update public.axic_shipments set payload=jsonb_set(payload,'{status}','"In transit"') where id='AX-RCPTTEST';
+ result:=public.axic_receive_good(a,'Kano warehouse',actor,'QA operator',pg_catalog.gen_random_uuid());
+ if (result->>'received')::int<>1 or result->>'shipmentStatus'<>'In transit' then raise exception 'Second hub partial failed';end if;
+ result:=public.axic_receive_good(b,'Kano warehouse',actor,'QA operator',pg_catalog.gen_random_uuid());
+ if (result->>'received')::int<>2 or result->>'shipmentStatus'<>'At hub' then raise exception 'Second hub completion failed';end if;
+ update public.axic_shipments set payload=jsonb_set(payload,'{status}','"Delivered"') where id='AX-RCPTTEST';
+ begin perform public.axic_receive_good(a,'New hub',actor,'QA operator',pg_catalog.gen_random_uuid());raise exception 'Delivered shipment regressed';exception when unique_violation then null;end;
+ perform public.axic_create_consignment('{"id":"AX-RCPTEXC","status":"Exception","location":"Lagos","events":[]}','{}','{}','[{"id":"ca5e0003-0000-4000-8000-000000000006","description":"QA exception","weight":1}]');
+ result:=public.axic_receive_good('ca5e0003-0000-4000-8000-000000000006','Abuja warehouse',actor,'QA operator',pg_catalog.gen_random_uuid());
+ if result->>'shipmentStatus'<>'Exception' then raise exception 'Exception silently cleared';end if;
+end $$;
+select relrowsecurity,has_table_privilege('anon','public.axic_receipts','SELECT') as anonymous_read,has_table_privilege('authenticated','public.axic_receipts','INSERT') as client_write,has_function_privilege('anon','public.axic_receive_good(uuid,text,uuid,text,uuid)','EXECUTE') as anonymous_receive from pg_class where oid='public.axic_receipts'::regclass;
+rollback;
