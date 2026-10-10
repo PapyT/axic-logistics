@@ -51,3 +51,16 @@
 .contact-fields{border:1px solid #dce5df;border-radius:12px;padding:20px;margin:16px 0;display:grid;grid-template-columns:1fr 1fr;gap:12px}.contact-fields legend{padding:0 8px;font-weight:700}.contact-fields .micro,.goods-input-row{grid-column:1/-1}.goods-input-row{display:grid;grid-template-columns:2fr 1fr auto;gap:10px;align-items:end}.consignment-panel{padding:28px}.consignment-panel h2{font-size:24px;margin-bottom:16px}.consignment-panel form{display:grid;gap:16px;margin:20px 0}.consignment-panel label{display:grid;gap:8px}.consignment-panel input,.consignment-panel select{padding:12px;border:1px solid #ccd9d3;border-radius:8px;width:100%;background:white}.consignment-columns,.party-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:24px 0}.party-grid section{background:#f2f6f3;padding:20px;border-radius:12px}.item-label{display:flex;align-items:center;gap:20px;border:1px solid #d7e0db;padding:16px;margin:16px 0;border-radius:12px;break-inside:avoid;background:white;color:#152a24}.item-label code{font-size:11px;overflow-wrap:anywhere}.item-label h3{margin:8px 0}.item-label img{flex-shrink:0}.scanner-video{width:100%;max-height:320px;background:#152a24;border-radius:12px}.scanner-hidden{display:none}.button-row{margin:16px 0}.team-account{padding:20px 0;border-bottom:1px solid #dde5df}.team-account label{margin:12px 0}.scan-page{max-width:1200px;margin:auto;padding:28px}.scan-page>h1{margin:24px 0}.consignment-panel>.btn{margin:8px 8px 8px 0}
 @media(max-width:700px){.contact-fields,.consignment-columns,.party-grid{grid-template-columns:1fr}.goods-input-row{grid-template-columns:1fr 1fr}.item-label{flex-direction:column;align-items:flex-start}.consignment-panel{padding:18px}}
 @media print{body *{visibility:hidden!important}.qr-print-area,.qr-print-area *{visibility:visible!important}.qr-print-area{position:absolute;left:0;top:0;width:100%;padding:20px}.item-label{display:flex;flex-direction:row;border:1px solid black;break-inside:avoid}.item-label .micro{font-size:11px}}
+
+/* Keep the rotated operations card inset, with consistent content padding. */
+.ops-connected-preview{margin:40px 32px 40px 16px;transform-origin:center;border-radius:10px;min-width:0}
+.ops-connected-preview .preview-body{padding:clamp(20px,2.2vw,32px)}
+.ops-connected-preview .preview-heading{padding:0;align-items:flex-start;flex-wrap:wrap}
+.ops-connected-preview .preview-heading h3{font-size:18px}
+.ops-connected-preview .operations-feature-list{margin:24px 0;gap:8px}
+.ops-connected-preview .operations-feature-list>div{padding:18px 0;align-items:flex-start}
+.ops-connected-preview .operations-feature-list span{min-width:0}
+.ops-connected-preview .operations-feature-list small{line-height:1.6}
+.ops-connected-preview .preview-body>.text-link{line-height:1.6}
+@media(max-width:900px){.ops-connected-preview{margin:32px 28px 32px 12px}}
+@media(max-width:650px){.ops-connected-preview{margin:8px 24px 32px;transform:rotate(-1deg)}.ops-connected-preview .preview-body{padding:22px 20px}.ops-connected-preview .preview-heading .badge{display:inline-flex}.ops-connected-preview .operations-feature-list{margin:20px 0}.ops-connected-preview .operations-feature-list>div{gap:14px}.ops-connected-preview .operations-feature-list b{font-size:13px}.ops-connected-preview .operations-feature-list small{font-size:11px}}
